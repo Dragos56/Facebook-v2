@@ -2,96 +2,134 @@
 
 int handle_register(int client_fd, char* msg)
 {
+    const char* response = "REGISTER OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_login(int client_fd, char* msg)
 {
+    const char* response = "LOGIN OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_logout(int client_fd, char* msg)
 {
+    const char* response = "LOGOUT OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_delete_account(int client_fd, char* msg)
 {
+    const char* response = "DELETE_ACCOUNT OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_update_name(int client_fd, char* msg)
 {
+    const char* response = "UPDATE_NAME OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_update_bio(int client_fd, char* msg)
 {
+    const char* response = "UPDATE_BIO OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_update_password(int client_fd, char* msg)
 {
+    const char* response = "UPDATE_PASSWORD OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_update_picture(int client_fd, char* msg)
 {
+    const char* response = "UPDATE_PICTURE OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_update_visibility(int client_fd, char* msg)
 {
+    const char* response = "UPDATE_VISIBILITY OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_follow_request(int client_fd, char* msg)
 {
+    const char* response = "FOLLOW_REQUEST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_accept_follow_request(int client_fd, char* msg)
 {
+    const char* response = "ACCEPT_FOLLOW_REQUEST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_reject_follow_request(int client_fd, char* msg)
 {
+    const char* response = "REJECT_FOLLOW_REQUEST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_unfollow_request(int client_fd, char* msg)
 {
+    const char* response = "UNFOLLOW_REQUEST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_create_post(int client_fd, char* msg)
 {
+    const char* response = "CREATE_POST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_edit_post_description(int client_fd, char* msg)
 {
+    const char* response = "EDIT_POST_DESCRIPTION OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_edit_post_visibility(int client_fd, char* msg)
 {
+    const char* response = "EDIT_POST_VISIBILITY OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_like_post(int client_fd, char* msg)
 {
+    const char* response = "LIKE_POST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_comment_post(int client_fd, char* msg)
 {
+    const char* response = "COMMENT_POST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
 int handle_delete_post(int client_fd, char* msg)
 {
+    const char* response = "DELETE_POST OK";
+    write(client_fd, response, strlen(response));
     return 0;
 };
 
