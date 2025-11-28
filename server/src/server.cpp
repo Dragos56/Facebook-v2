@@ -7,29 +7,23 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include "handle_commands.h"
 
-#define PORT 5656 /* portul folosit */
+#define PORT 5656
 
-extern int errno;  /* eroarea returnata de unele apeluri */
+extern int errno;
 
-
-int sayHello(int fd);
-
-/* functie de convertire a adresei IP a clientului in sir de caractere */
 char *conv_addr(struct sockaddr_in address) {
     static char str[25];
     char port[7];
 
-    /* adresa IP a clientului */
     strcpy (str, inet_ntoa (address.sin_addr));
-    /* portul utilizat de client */
     bzero (port, 7);
     sprintf (port, ":%d", ntohs (address.sin_port));
     strcat (str, port);
     return (str);
 }
 
-/* programul */
 int main ()
 {
     struct sockaddr_in server;	/* structurile pentru server si clienti */
@@ -43,20 +37,16 @@ int main ()
     int nfds;			/* numarul maxim de descriptori */
     socklen_t len;			/* lungimea structurii sockaddr_in */
 
-    /* creare socket */
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
     {
         perror ("[server] Eroare la socket().\n");
         return errno;
     }
 
-    /*setam pentru socket optiunea SO_REUSEADDR */
     setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-    /* pregatim structurile de date */
     bzero (&server, sizeof (server));
 
-    /* umplem structura folosita de server */
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl (INADDR_ANY);
     server.sin_port = htons (PORT);
@@ -75,20 +65,17 @@ int main ()
         return errno;
     }
 
-    /* completam multimea de descriptori de citire */
-    FD_ZERO (&actfds);		/* initial, multimea este vida */
-    FD_SET (sd, &actfds);		/* includem in multime socketul creat */
+    FD_ZERO (&actfds);	
+    FD_SET (sd, &actfds);	
 
-    tv.tv_sec = 1;		/* se va astepta un timp de 1 sec. */
+    tv.tv_sec = 1;	
     tv.tv_usec = 0;
 
-    /* valoarea maxima a descriptorilor folositi */
     nfds = sd;
 
     printf ("[server] Asteptam la portul %d...\n", PORT);
     fflush (stdout);
 
-    /* servim in mod concurent (!?) clientii... */
     while (1)
     {
         /* ajustam multimea descriptorilor activi (efectiv utilizati) */
@@ -132,48 +119,16 @@ int main ()
             /* este un socket de citire pregatit? */
             if (fd != sd && FD_ISSET (fd, &readfds))
             {
-	            if (sayHello(fd))
+	            if (handle_commands(fd))
 		        {
                     printf ("[server] S-a deconectat clientul cu descriptorul %d.\n",fd);
                     fflush (stdout);
-                    close (fd);		/* inchidem conexiunea cu clientul */
-                    FD_CLR (fd, &actfds);/* scoatem si din multime */
+                    close (fd);		
+                    FD_CLR (fd, &actfds);
 
 		        }
 	        }
-	    }			/* for */
-    }				/* while */
-}				/* main */
+	    }			
+    }				
+}				
 
-
-/* realizeaza primirea si retrimiterea unui mesaj unui client */
-int sayHello(int fd)
-{
-    char buffer[100];		/* mesajul */
-    int bytes;			/* numarul de octeti cititi/scrisi */
-    char msg[100];		//mesajul primit de la client
-    char msgrasp[100]=" ";        //mesaj de raspuns pentru client
-
-    bytes = read (fd, msg, sizeof (buffer));
-    if (bytes < 0)
-    {
-        perror ("Eroare la read() de la client.\n");
-        return 0;
-    }
-    printf ("[server]Mesajul a fost receptionat...%s\n", msg);
-
-    /*pregatim mesajul de raspuns */
-    bzero(msgrasp,100);
-    strcat(msgrasp,"Hello ");
-    strcat(msgrasp,msg);
-
-    printf("[server]Trimitem mesajul inapoi...%s\n",msgrasp);
-
-    if (bytes && write (fd, msgrasp, bytes) < 0)
-    {
-        perror ("[server] Eroare la write() catre client.\n");
-        return 0;
-    }
-
-    return bytes;
-}

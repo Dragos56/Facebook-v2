@@ -55,7 +55,7 @@ void logout_account(const char* username, char* response)
 void delete_account(const char* username, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "DELETE|%s", username);
+    snprintf(command, sizeof(command), "DELETE_ACCOUNT|%s", username);
     send_message(command);
 
     char buffer[MESSAGE_LENGTH];
@@ -72,6 +72,22 @@ void update_name(const char* old_username, const char* new_username, char* respo
 {
     char command[MESSAGE_LENGTH];
     snprintf(command, sizeof(command), "UPDATE_NAME|%s|%s", old_username, new_username);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } else {
+        strcpy(response, "Eroare la primire.");
+    }
+}
+
+void update_bio(const char* username, const char* new_bio, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "UPDATE_BIO|%s|%s", username, new_bio);
     send_message(command);
 
     char buffer[MESSAGE_LENGTH];
@@ -247,7 +263,7 @@ void edit_post_description(const char* author, const char* description, int post
 void like_post(const char* username, const char* author, int post_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "LIKE|%s|%s|%d", username, author, post_id);
+    snprintf(command, sizeof(command), "LIKE_POST|%s|%s|%d", username, author, post_id);
     send_message(command);
 
     char buffer[MESSAGE_LENGTH];
@@ -260,10 +276,10 @@ void like_post(const char* username, const char* author, int post_id, char* resp
     }
 }
 
-void comment_post(const char* username, const char* author, int post_id, const char* comment)
+void comment_post(const char* username, const char* author, int post_id, const char* comment, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "COMMENT|%s|%s|%d|%s", username, author, post_id, comment);
+    snprintf(command, sizeof(command), "COMMENT_POST|%s|%s|%d|%s", username, author, post_id, comment);
     send_message(command);
     
     char buffer[MESSAGE_LENGTH];
@@ -276,7 +292,7 @@ void comment_post(const char* username, const char* author, int post_id, const c
     }
 }
 
-void delete_post(const char* author, int post_id)
+void delete_post(const char* author, int post_id, char* response)
 {
     char command[MESSAGE_LENGTH];
     snprintf(command, sizeof(command), "DELETE_POST|%s|%d", author, post_id);
