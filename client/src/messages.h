@@ -11,7 +11,7 @@ string register_account(string username, string password)
     send_message(command);
 
     string response;
-    int n = receive_message(response);
+    int n = receive_message(&response);
     if(n <= 0)
     {
         response="Eroare la primire.";
@@ -25,7 +25,7 @@ string login_account(string username, string password)
     send_message(command);
 
     string response;
-    int n = receive_message(response);
+    int n = receive_message(&response);
     if(n <= 0)
     {
         response="Eroare la primire.";
@@ -39,7 +39,7 @@ string logout_account(string username)
     send_message(command);
 
     string response;
-    int n = receive_message(response);
+    int n = receive_message(&response);
     if(n <= 0)
     {
         response="Eroare la primire.";
@@ -92,6 +92,20 @@ string update_password(string username, string old_password,string new_password)
 string update_profile_picture(string username, string image_path)
 {
     string command="UPDATE_PICTURE|" + username + "|" + image_path;
+    send_message(command);
+
+    string response;
+    int n = receive_message(response);
+    if(n <= 0)
+    {
+        response="Eroare la primire.";
+    }
+    return response;
+}
+
+string update_profile_visibility(string username, string visibility)
+{
+    string command="UPDATE_VISIBILITY|" + username + "|" + visibility;
     send_message(command);
 
     string response;
