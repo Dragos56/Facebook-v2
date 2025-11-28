@@ -10,15 +10,15 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <string>
 
-using namespace std;
+#define MESSAGE_LENGTH 1000
 
 extern int errno;
 
 int sd;
 
-int connect_to_server(const char* ip, int port) {
+int connect_to_server(const char* ip, int port) 
+{
     struct sockaddr_in server;
 
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -38,17 +38,12 @@ int connect_to_server(const char* ip, int port) {
     return 1;
 }
 
-int send_message(const string& msg) {
-    return write(sd, msg.c_str(), msg.length());
+int send_message(const char* msg) 
+{
+    return write(sd, msg, MESSAGE_LENGTH);
 }
 
-int receive_message(string& response) {
-    char buffer[1000];            
-    int n = read(sd, buffer, sizeof(buffer)-1);
-    if (n > 0) {
-        buffer[n] = '\0';
-        response = std::string(buffer); 
-    }
-    return n;
+int receive_message(char* buffer) 
+{
+    return read(sd, buffer, MESSAGE_LENGTH);
 }
-

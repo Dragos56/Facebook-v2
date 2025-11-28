@@ -1,11 +1,3 @@
-/* servTCPCSel.c - Exemplu de server TCP concurent (!?)
-   Asteapta un "nume" de la clienti multipli si intoarce clientilor sirul
-   "Hello nume" corespunzator; multiplexarea intrarilor se realizeaza cu select().
-
-   Cod sursa preluat din [Retele de Calculatoare,S.Buraga & G.Ciobanu, 2003] si modificat de
-   Lenuta Alboaie <adria@info.uaic.ro> (c)
-*/
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -15,13 +7,11 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include "json.hpp"
 
 #define PORT 5656 /* portul folosit */
 
-using json = nlohmann::json;
-
 extern int errno;  /* eroarea returnata de unele apeluri */
+
 
 int sayHello(int fd);
 
