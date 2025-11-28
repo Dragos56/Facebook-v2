@@ -144,6 +144,12 @@ int handle_commands(int client_fd)
         perror ("Eroare la read() de la client.\n");
         return 0;
     }
+    else if (msg_length == 0)
+    {
+        printf("[server] Clientul s-a inchis.\n");
+        return 1;
+    }
+
     msg[msg_length] = '\0';
     printf ("[server]Mesajul a fost receptionat...%s\n", msg);
     fflush (stdout);
