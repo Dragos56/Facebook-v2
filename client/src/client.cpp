@@ -3,17 +3,24 @@
 #include "backends/imgui_impl_opengl3.h"
 
 #include <GLFW/glfw3.h>
-
 #include "network.h"
+#include "render_ui.h"
+#include "messages.h"
 
 int main() {
     glfwInit();
+
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
     GLFWwindow* window = glfwCreateWindow(800, 600, "ImGui Test", NULL, NULL);
     glfwMakeContextCurrent(window);
 
-    if (!connect_to_server("10.100.0.30", 5656)) {
+    if (!connect_to_server("127.0.0.1", 5656)) 
+    {
         printf("Nu m-am putut conecta la server!\n");
-    } else {
+    } 
+    else 
+    {
         printf("Conectat cu succes!\n");
     }
 
@@ -32,30 +39,7 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        static char command[100] = {0};
-        static char response[100] = {0};
-
-        ImGui::Begin("Client VirtualSoc");
-
-        ImGui::InputText("Comanda", command, IM_ARRAYSIZE(command));
-
-        if (ImGui::Button("Trimite")) {
-            send_message(command);
-
-            char buffer[100];
-            int n = receive_message(buffer);
-            if (n > 0) {
-                buffer[n] = '\0';
-                strcpy(response, buffer);
-            } else {
-                strcpy(response, "Eroare la primire.");
-            }
-        }
-
-        ImGui::Text("Raspuns server:");
-        ImGui::TextWrapped("%s", response);
-
-        ImGui::End();
+        render_loggedOut_ui();
 
         ImGui::Render();
         glClear(GL_COLOR_BUFFER_BIT);
