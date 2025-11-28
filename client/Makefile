@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Iimgui -Iimgui/backends -Wall -O2
+CXXFLAGS = -std=c++11 -Iimgui -Iimgui/backends -Wall -O2
 LDFLAGS = -lglfw -lGL -ldl -lpthread
 TARGET = app
 

@@ -15,8 +15,11 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include "json.hpp"
 
 #define PORT 5656 /* portul folosit */
+
+using json = nlohmann::json;
 
 extern int errno;  /* eroarea returnata de unele apeluri */
 
@@ -48,7 +51,7 @@ int main ()
     int optval=1; 			/* optiune folosita pentru setsockopt()*/
     int fd;			/* descriptor folosit pentru parcurgerea listelor de descriptori */
     int nfds;			/* numarul maxim de descriptori */
-    int len;			/* lungimea structurii sockaddr_in */
+    socklen_t len;			/* lungimea structurii sockaddr_in */
 
     /* creare socket */
     if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
