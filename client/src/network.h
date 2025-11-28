@@ -1,5 +1,4 @@
-#ifndef NETWORK_H
-#define NETWORK_H
+#pragma once
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -11,6 +10,9 @@
 #include <netdb.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <string>
+
+using namespace std;
 
 extern int errno;
 
@@ -36,12 +38,17 @@ int connect_to_server(const char* ip, int port) {
     return 1;
 }
 
-int send_message(const char* msg) {
-    return write(sd, msg, 100);
+int send_message(const string& msg) {
+    return write(sd, msg.c_str(), msg.length());
 }
 
-int receive_message(char* buffer) {
-    return read(sd, buffer, 100);
+int receive_message(string& response) {
+    char buffer[1000];            
+    int n = read(sd, buffer, sizeof(buffer)-1);
+    if (n > 0) {
+        buffer[n] = '\0';
+        response = std::string(buffer); 
+    }
+    return n;
 }
 
-#endif

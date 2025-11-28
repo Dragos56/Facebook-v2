@@ -1,9 +1,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-
 #include <GLFW/glfw3.h>
-
 #include "network.h"
 
 int main() {
@@ -32,9 +30,9 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        static char command[100] = {0};
-        static char response[100] = {0};
-
+        static char command[256] = "";
+        string response;
+        
         ImGui::Begin("Client VirtualSoc");
 
         ImGui::InputText("Comanda", command, IM_ARRAYSIZE(command));
@@ -42,18 +40,14 @@ int main() {
         if (ImGui::Button("Trimite")) {
             send_message(command);
 
-            char buffer[100];
-            int n = receive_message(buffer);
-            if (n > 0) {
-                buffer[n] = '\0';
-                strcpy(response, buffer);
-            } else {
-                strcpy(response, "Eroare la primire.");
+            int n = receive_message(response);
+            if (n <= 0) {
+                response = "Eroare la primire.";
             }
         }
 
         ImGui::Text("Raspuns server:");
-        ImGui::TextWrapped("%s", response);
+        ImGui::TextWrapped("%s", response.c_str());
 
         ImGui::End();
 
