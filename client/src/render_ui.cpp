@@ -8,7 +8,6 @@ void render_login_window(float total_width, float total_height)
     ImVec2 popup_size = ImVec2(total_width * 0.25f, total_height * 0.20f);
     ImVec2 window_size = ImGui::GetIO().DisplaySize;
 
-    // Setăm poziția în mijlocul ecranului
     ImGui::SetNextWindowPos(ImVec2(
         (window_size.x - popup_size.x) * 0.5f, 
         (window_size.y - popup_size.y) * 0.5f
@@ -35,16 +34,22 @@ void render_login_window(float total_width, float total_height)
             showLogin = false;
         }
 
+        if(!showLogin)
+        {
+            username[0] = '\0';
+            password[0] = '\0';
+            message[0] = '\0';
+        }
+
         ImGui::EndPopup();
     }
 }
 
 void render_register_window(float total_width, float total_height)
 {
-    ImVec2 popup_size = ImVec2(total_width * 0.25f, total_height * 0.20f); // dimensiunea popup-ului
+    ImVec2 popup_size = ImVec2(total_width * 0.25f, total_height * 0.20f);
     ImVec2 window_size = ImGui::GetIO().DisplaySize;
 
-    // Setăm poziția în mijlocul ecranului
     ImGui::SetNextWindowPos(ImVec2(
         (window_size.x - popup_size.x) * 0.5f, 
         (window_size.y - popup_size.y) * 0.5f
@@ -64,12 +69,19 @@ void render_register_window(float total_width, float total_height)
         if (ImGui::Button("Register")) {
             register_account(username, password, message);
             ImGui::CloseCurrentPopup();
-            showRegister = false;  // ascunde popup după click
+            showRegister = false;
         }
         ImGui::SameLine();
         if (ImGui::Button("Close")) {
             ImGui::CloseCurrentPopup();
-            showRegister = false;  // ascunde popup
+            showRegister = false;
+        }
+        
+        if(!showRegister)
+        {
+            username[0] = '\0';
+            password[0] = '\0';
+            message[0] = '\0';
         }
 
         ImGui::EndPopup();
