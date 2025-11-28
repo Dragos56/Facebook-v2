@@ -1,30 +1,27 @@
-CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -O2
+CC = gcc
+CFLAGS = -Wall -Wextra -O2
 TARGET = server
-
 SRC_DIR = src
-BUILD_DIR = build
+SRC = $(wildcard $(SRC_DIR)/*.c)
 
-# toate fișierele .cpp
-CPP_FILES := $(wildcard $(SRC_DIR)/*.cpp)
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
+OBJ_DIR = build
+OBJ = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC))
 
 all: $(TARGET)
 
-$(TARGET): $(OBJ_FILES)
-	$(CXX) $(OBJ_FILES) -o $(TARGET)
-	@echo "Build complete: $(TARGET)"
+# leagă obiectele în executabil
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
 
-# compilează fiecare .cpp în .o
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(BUILD_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
-	@echo "Cleaned."
+# compilează fiecare .c în .o
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 run: all
 	./$(TARGET)
 
-.PHONY: all clean run
+clean:
+	rm -rf $(OBJ_DIR) $(TARGET)
+
+.PHONY: all run clean

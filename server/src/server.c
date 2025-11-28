@@ -16,7 +16,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#define PORT 2728 /* portul folosit */
+#define PORT 5656 /* portul folosit */
 
 extern int errno;  /* eroarea returnata de unele apeluri */
 
