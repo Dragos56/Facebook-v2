@@ -6,7 +6,8 @@ int connect_to_server(const char* ip, int port)
 {
     struct sockaddr_in server;
 
-    if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1) {
+    if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1) 
+    {
         perror ("socket() error");
         return 0;
     }
@@ -15,7 +16,8 @@ int connect_to_server(const char* ip, int port)
     server.sin_addr.s_addr = inet_addr(ip);
     server.sin_port = htons(port);
 
-    if (connect(sd, (struct sockaddr *) &server, sizeof(struct sockaddr)) == -1) {
+    if (connect(sd, (struct sockaddr *) &server, sizeof(struct sockaddr)) == -1) 
+    {
         perror("connect() error");
         return 0;
     }

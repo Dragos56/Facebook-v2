@@ -13,7 +13,8 @@
 
 extern int errno;
 
-char *conv_addr(struct sockaddr_in address) {
+char *conv_addr(struct sockaddr_in address) 
+{
     static char str[25];
     char port[7];
 

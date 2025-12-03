@@ -12,6 +12,7 @@ struct Comment {
 
 struct Post {
     int id;
+    char path[MAX_STR];
     char description[MAX_STR];
     char visibility[MAX_STR]; 
     int likes;

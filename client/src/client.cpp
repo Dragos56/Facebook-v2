@@ -12,10 +12,10 @@ int main() {
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "ImGui Test", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1200, 800, "DragosBook", NULL, NULL);
     glfwMakeContextCurrent(window);
 
-    if (!connect_to_server("10.100.0.30", 5656)) 
+    if (!connect_to_server("127.0.0.1", 5656)) 
     {
         printf("Nu m-am putut conecta la server!\n");
     } 
@@ -32,7 +32,8 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window)) 
+    {
         glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();

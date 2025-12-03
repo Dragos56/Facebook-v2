@@ -9,10 +9,13 @@ void register_account(const char* username, const char* password, char* response
  
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -27,12 +30,15 @@ void login_account(const char* username, const char* password, char* response)
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
-        strcpy(response, "Eroare la primire.");
     } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
     printf("Received response: %s\n", response);
 }
 
@@ -45,13 +51,16 @@ void logout_account(const char* username, char* response)
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
-    }   
-    printf("Received response: %s\n", response); 
+    }
+    printf("Received response: %s\n", response);
 }
 
 void delete_account(const char* username, char* response)
@@ -63,10 +72,13 @@ void delete_account(const char* username, char* response)
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -81,10 +93,13 @@ void update_name(const char* old_username, const char* new_username, char* respo
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -99,10 +114,13 @@ void update_bio(const char* username, const char* new_bio, char* response)
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -117,10 +135,13 @@ void update_password(const char* username, const char* old_password, const char*
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -135,10 +156,13 @@ void update_profile_picture(const char* username, const char* image_path, char* 
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -153,10 +177,13 @@ void update_profile_visibility(const char* username, const char* visibility, cha
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -171,10 +198,13 @@ void follow_request(const char* username, const char* username_to_follow, char* 
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -189,10 +219,13 @@ void accept_follow_request(const char* username, const char* username_to_accept,
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -207,10 +240,13 @@ void reject_follow_request(const char* username, const char* username_to_reject,
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -225,10 +261,13 @@ void unfollow_request(const char* username, const char* username_to_unfollow, ch
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -243,10 +282,13 @@ void post(const char* author, const char* description, const char* image_path, c
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -261,10 +303,13 @@ void edit_post_visibility(const char* author, const char* visibility, int post_i
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -279,10 +324,13 @@ void edit_post_description(const char* author, const char* description, int post
     
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -297,10 +345,13 @@ void like_post(const char* username, const char* author, int post_id, char* resp
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -315,10 +366,13 @@ void comment_post(const char* username, const char* author, int post_id, const c
     
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);
@@ -333,10 +387,13 @@ void delete_post(const char* author, int post_id, char* response)
     
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) {
+    if (n > 0) 
+    {
         buffer[n] = '\0';
         strcpy(response, buffer);
-    } else {
+    } 
+    else 
+    {
         strcpy(response, "Eroare la primire.");
     }
     printf("Received response: %s\n", response);

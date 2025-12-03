@@ -15,7 +15,8 @@ void render_login_window(float total_width, float total_height)
 
     ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
     ImGui::OpenPopup("Login");
-    if (ImGui::BeginPopupModal("Login", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+    if (ImGui::BeginPopupModal("Login", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) 
+    {
         static char username[USERNAME_LENTH] = "";
         static char password[PASSWORD_LENGTH] = "";
         static char message[MESSAGE_LENGTH] = "";
@@ -23,13 +24,15 @@ void render_login_window(float total_width, float total_height)
         ImGui::InputText("Username", username, USERNAME_LENTH);
         ImGui::InputText("Password", password, PASSWORD_LENGTH, ImGuiInputTextFlags_Password);
 
-        if (ImGui::Button("Login")) {
+        if (ImGui::Button("Login")) 
+        {
             login_account(username, password, message);
             ImGui::CloseCurrentPopup();
             showLogin = false;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Close")) {
+        if (ImGui::Button("Close")) 
+        {
             ImGui::CloseCurrentPopup();
             showLogin = false;
         }
@@ -57,7 +60,8 @@ void render_register_window(float total_width, float total_height)
 
     ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
     ImGui::OpenPopup("Register");
-    if (ImGui::BeginPopupModal("Register", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+    if (ImGui::BeginPopupModal("Register", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) 
+    {
 
         static char username[USERNAME_LENTH] = "";
         static char password[PASSWORD_LENGTH] = "";
@@ -66,13 +70,15 @@ void render_register_window(float total_width, float total_height)
         ImGui::InputText("Username", username, USERNAME_LENTH);
         ImGui::InputText("Password", password, PASSWORD_LENGTH, ImGuiInputTextFlags_Password);
 
-        if (ImGui::Button("Register")) {
+        if (ImGui::Button("Register")) 
+        {
             register_account(username, password, message);
             ImGui::CloseCurrentPopup();
             showRegister = false;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Close")) {
+        if (ImGui::Button("Close")) 
+        {
             ImGui::CloseCurrentPopup();
             showRegister = false;
         }
