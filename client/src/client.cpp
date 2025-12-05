@@ -15,7 +15,7 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(1200, 800, "DragosBook", NULL, NULL);
     glfwMakeContextCurrent(window);
 
-    if (!connect_to_server("127.0.0.1", 5656)) 
+    if (!connect_to_server("10.100.0.30", 5656)) 
     {
         printf("Nu m-am putut conecta la server!\n");
     } 
