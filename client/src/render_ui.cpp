@@ -17,7 +17,9 @@ void render_login_window(float total_width, float total_height)
     ), ImGuiCond_Appearing);
 
     ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
+   
     ImGui::OpenPopup("Login");
+
     if (ImGui::BeginPopupModal("Login", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) 
     {
         static char username[USERNAME_LENGTH] = "";
@@ -31,16 +33,18 @@ void render_login_window(float total_width, float total_height)
         {
             login_account(username, password, response);
             if(strncmp(response,"LOGIN OK", 8) == 0)
-                {
-                    app_status = LOGGED_IN;
-                    strncpy(connected_username, username, USERNAME_LENGTH);
-                }
+            {
+                app_status = LOGGED_IN;
+                strncpy(connected_username, username, USERNAME_LENGTH);
+            }
             else
                 app_status = LOGGED_OUT;
             ImGui::CloseCurrentPopup();
             showLogin = false;
         }
+
         ImGui::SameLine();
+
         if (ImGui::Button("Close")) 
         {
             app_status = LOGGED_OUT;
@@ -70,10 +74,11 @@ void render_register_window(float total_width, float total_height)
     ), ImGuiCond_Appearing);
 
     ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
+
     ImGui::OpenPopup("Register");
+
     if (ImGui::BeginPopupModal("Register", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) 
     {
-
         static char username[USERNAME_LENGTH] = "";
         static char password[PASSWORD_LENGTH] = "";
         static char response[MESSAGE_LENGTH] = "";
@@ -84,10 +89,12 @@ void render_register_window(float total_width, float total_height)
         if (ImGui::Button("Register")) 
         {
             register_account(username, password, response);
+
             if(strncmp(response,"REGISTER OK", 11) == 0)
                 app_status = LOGGED_IN;
             else
                 app_status = LOGGED_OUT;
+
             ImGui::CloseCurrentPopup();
             showRegister = false;
         }
@@ -163,7 +170,7 @@ void render_friends_ui()
     ImGui::InputText("Friend Name", friend_name, USERNAME_LENGTH);
     ImGui::InputText("Message", message, MESSAGE_LENGTH);
 
-    if (ImGui::Button("Send response", ImVec2(button_width, button_height)))
+    if (ImGui::Button("Send message", ImVec2(button_width, button_height)))
     {
         send_message(connected_username, friend_name, message, response);
         friend_name[0] = '\0';
