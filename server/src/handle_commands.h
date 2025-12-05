@@ -25,4 +25,5 @@ int handle_edit_post_visibility(int client_fd, char* msg);
 int handle_like_post(int client_fd, char* msg);
 int handle_comment_post(int client_fd, char* msg);
 int handle_delete_post(int client_fd, char* msg);
+int handle_send_message(int client_fd, char* msg);
 int handle_commands(int client_fd);

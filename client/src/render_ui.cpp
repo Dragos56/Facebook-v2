@@ -22,15 +22,15 @@ void render_login_window(float total_width, float total_height)
     {
         static char username[USERNAME_LENGTH] = "";
         static char password[PASSWORD_LENGTH] = "";
-        static char message[MESSAGE_LENGTH] = "";
+        static char response[MESSAGE_LENGTH] = "";
 
         ImGui::InputText("Username", username, USERNAME_LENGTH);
         ImGui::InputText("Password", password, PASSWORD_LENGTH, ImGuiInputTextFlags_Password);
 
         if (ImGui::Button("Login")) 
         {
-            login_account(username, password, message);
-            if(strncmp(message,"LOGIN OK", 8) == 0)
+            login_account(username, password, response);
+            if(strncmp(response,"LOGIN OK", 8) == 0)
                 {
                     app_status = LOGGED_IN;
                     strncpy(connected_username, username, USERNAME_LENGTH);
@@ -52,7 +52,7 @@ void render_login_window(float total_width, float total_height)
         {
             username[0] = '\0';
             password[0] = '\0';
-            message[0] = '\0';
+            response[0] = '\0';
         }
 
         ImGui::EndPopup();
@@ -76,15 +76,15 @@ void render_register_window(float total_width, float total_height)
 
         static char username[USERNAME_LENGTH] = "";
         static char password[PASSWORD_LENGTH] = "";
-        static char message[MESSAGE_LENGTH] = "";
+        static char response[MESSAGE_LENGTH] = "";
 
         ImGui::InputText("Username", username, USERNAME_LENGTH);
         ImGui::InputText("Password", password, PASSWORD_LENGTH, ImGuiInputTextFlags_Password);
 
         if (ImGui::Button("Register")) 
         {
-            register_account(username, password, message);
-            if(strncmp(message,"REGISTER OK", 11) == 0)
+            register_account(username, password, response);
+            if(strncmp(response,"REGISTER OK", 11) == 0)
                 app_status = LOGGED_IN;
             else
                 app_status = LOGGED_OUT;
@@ -103,7 +103,7 @@ void render_register_window(float total_width, float total_height)
         {
             username[0] = '\0';
             password[0] = '\0';
-            message[0] = '\0';
+            response[0] = '\0';
         }
 
         ImGui::EndPopup();
@@ -153,7 +153,23 @@ void render_friends_ui()
     ImGui::SameLine();
 
     ImGui::BeginChild("MiddlePanel", ImVec2(total_width * 0.50f, total_height * 0.90f), true);
-     
+    button_width = total_width * 0.2f;
+    button_height = (total_height * 0.10f) * 0.50f;
+
+    static char friend_name[USERNAME_LENGTH] = "";
+    static char message[MESSAGE_LENGTH] = "";
+    static char response[MESSAGE_LENGTH] = "";
+
+    ImGui::InputText("Friend Name", friend_name, USERNAME_LENGTH);
+    ImGui::InputText("Message", message, MESSAGE_LENGTH);
+
+    if (ImGui::Button("Send response", ImVec2(button_width, button_height)))
+    {
+        send_message(connected_username, friend_name, message, response);
+        friend_name[0] = '\0';
+        message[0] = '\0';
+    }
+
     ImGui::EndChild();
 
     ImGui::SameLine();
@@ -163,28 +179,27 @@ void render_friends_ui()
     button_height = (total_height * 0.10f) * 0.50f;
 
     static char username[USERNAME_LENGTH] = "";
-    static char message[MESSAGE_LENGTH] = "";
 
     ImGui::InputText("Username", username, USERNAME_LENGTH);
 
     if (ImGui::Button("Follow", ImVec2(button_width, button_height)))
     {
-        follow_request(connected_username, username, message);
+        follow_request(connected_username, username, response);
         username[0] = '\0';
     }
     if (ImGui::Button("Accept", ImVec2(button_width, button_height)))
     {
-        accept_follow_request(connected_username, username, message);
+        accept_follow_request(connected_username, username, response);
         username[0] = '\0';
     }
     if (ImGui::Button("Reject", ImVec2(button_width, button_height)))
     {
-        reject_follow_request(connected_username, username, message);
+        reject_follow_request(connected_username, username, response);
         username[0] = '\0';
     }
     if (ImGui::Button("Unfollow", ImVec2(button_width, button_height)))
     {
-        unfollow_request(connected_username, username, message);
+        unfollow_request(connected_username, username, response);
         username[0] = '\0';
     }
     ImGui::EndChild();
@@ -244,23 +259,23 @@ void render_post_ui()
     static char image_path[PATH_LENGTH] = "test";
     static char visibility[VISIBILITY_LENGTH] = "test";
     int post_id=0;
-    static char message[MESSAGE_LENGTH] = "";
+    static char response[MESSAGE_LENGTH] = "";
 
     if (ImGui::Button("Create post", ImVec2(button_width, button_height)))
     {
-        post(connected_username, description, image_path, visibility, post_id, message);
+        post(connected_username, description, image_path, visibility, post_id, response);
     }
     if (ImGui::Button("Edit post visibility", ImVec2(button_width, button_height)))
     {
-        edit_post_visibility(connected_username, visibility, post_id, message);
+        edit_post_visibility(connected_username, visibility, post_id, response);
     }
     if (ImGui::Button("Edit post decription", ImVec2(button_width, button_height)))
     {
-        edit_post_description(connected_username, description, post_id, message);
+        edit_post_description(connected_username, description, post_id, response);
     }
     if (ImGui::Button("Delete post", ImVec2(button_width, button_height)))
     {
-        delete_post(connected_username, post_id, message);
+        delete_post(connected_username, post_id, response);
     }
     ImGui::EndChild();
 
@@ -392,13 +407,13 @@ void render_profile_ui()
     static char bio[BIO_LENGTH] = "";
     static char image_path[PATH_LENGTH] = "";
     static char visibility[VISIBILITY_LENGTH] = "";
-    static char message[MESSAGE_LENGTH] = "";
+    static char response[MESSAGE_LENGTH] = "";
 
     ImGui::InputText("Username", username, USERNAME_LENGTH);
 
     if (ImGui::Button("update name", ImVec2(button_width, button_height)))
     {
-        update_name(connected_username, username, message);
+        update_name(connected_username, username, response);
         strncpy(connected_username, username, USERNAME_LENGTH);
         username[0] = '\0';
     }
@@ -407,7 +422,7 @@ void render_profile_ui()
 
     if (ImGui::Button("update bio", ImVec2(button_width, button_height)))
     {
-        update_bio(connected_username, bio, message);
+        update_bio(connected_username, bio, response);
         bio[0] = '\0';
     }
 
@@ -416,7 +431,7 @@ void render_profile_ui()
 
     if (ImGui::Button("update password", ImVec2(button_width, button_height)))
     {
-        update_password(connected_username, old_password, new_password, message);
+        update_password(connected_username, old_password, new_password, response);
         old_password[0] = '\0';
         new_password[0] = '\0';
     }
@@ -425,7 +440,7 @@ void render_profile_ui()
 
     if (ImGui::Button("update image", ImVec2(button_width, button_height)))
     {
-        update_profile_picture(connected_username, image_path, message);
+        update_profile_picture(connected_username, image_path, response);
         image_path[0] = '\0';
     }
 
@@ -433,14 +448,14 @@ void render_profile_ui()
 
     if (ImGui::Button("update visibility", ImVec2(button_width, button_height)))
     {
-        update_profile_visibility(connected_username, visibility, message);
+        update_profile_visibility(connected_username, visibility, response);
         visibility[0] = '\0';
     }
 
     if (ImGui::Button("Delete account", ImVec2(button_width, button_height)))
     {
-        delete_account(connected_username, message);
-        if(strncmp(message,"DELETE_ACCOUNT OK", 9) == 0)
+        delete_account(connected_username, response);
+        if(strncmp(response,"DELETE_ACCOUNT OK", 9) == 0)
         {
             app_status = LOGGED_OUT;
             connected_username[0] = '\0';
@@ -529,10 +544,10 @@ void render_loggedIn_ui()
 
     if (ImGui::Button("Logout", ImVec2(button_width, button_height))) 
         {
-            static char message[MESSAGE_LENGTH] = "";
+            static char response[MESSAGE_LENGTH] = "";
 
-            logout_account(connected_username, message);
-            if(strncmp(message,"LOGOUT OK", 9) == 0)
+            logout_account(connected_username, response);
+            if(strncmp(response,"LOGOUT OK", 9) == 0)
                 {
                     app_status = LOGGED_OUT;
                     connected_username[0] = '\0';
@@ -580,15 +595,15 @@ void render_loggedIn_ui()
     static char author[USERNAME_LENGTH]="test";
     static char comment[MESSAGE_LENGTH]="test";
     int post_id=0;
-    static char message[MESSAGE_LENGTH]="";
+    static char response[MESSAGE_LENGTH]="";
 
     if (ImGui::Button("Like", ImVec2(button_width, button_height))) 
     {
-        like_post(connected_username, author, post_id, message);
+        like_post(connected_username, author, post_id, response);
     }
     if (ImGui::Button("Comment", ImVec2(button_width, button_height))) 
     {
-        comment_post(connected_username, author, post_id, comment, message);
+        comment_post(connected_username, author, post_id, comment, response);
     }
     ImGui::EndChild();
 

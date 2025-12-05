@@ -133,6 +133,13 @@ int handle_delete_post(int client_fd, char* msg)
     return 0;
 };
 
+int handle_send_message(int client_fd, char* msg)
+{
+    const char* response = "SEND_MESSAGE OK";
+    write(client_fd, response, strlen(response));
+    return 0;
+}
+
 int handle_commands(int client_fd)
 {
     int msg_length;	
@@ -231,6 +238,10 @@ int handle_commands(int client_fd)
     else if (strncmp(command, "DELETE_POST", 11) ==0)
     {
         return handle_delete_post(client_fd, msg);
+    }
+    else if (strncmp(command, "SEND_MESSAGE", 12) ==0)
+    {
+        return handle_send_message(client_fd, msg);
     }
     
     return 0;
