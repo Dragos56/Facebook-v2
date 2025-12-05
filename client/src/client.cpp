@@ -40,7 +40,7 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        render_loggedOut_ui();
+        render_ui();
 
         ImGui::Render();
         glClear(GL_COLOR_BUFFER_BIT);
