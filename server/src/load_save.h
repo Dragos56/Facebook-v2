@@ -35,5 +35,5 @@ struct User {
     int post_count;
 };
 
-void loadUsers();
-void saveUsers();
+void load_users();
+void save_users();
