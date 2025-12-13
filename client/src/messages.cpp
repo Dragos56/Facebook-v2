@@ -399,10 +399,10 @@ void delete_post(const char* author, int post_id, char* response)
     printf("Received response: %s\n", response);
 }
 
-void send_message(const char* username, const char* friend_name, const char* message, char* response)
+void send_message_friend(const char* username, const char* friend_name, const char* message, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "SEND_MESSAGE|%s|%s|%s", username, friend_name, message);
+    snprintf(command, sizeof(command), "SEND_MESSAGE_FRIEND|%s|%s|%s", username, friend_name, message);
     printf("Sending command: %s\n", command);
     send_message(command);
 

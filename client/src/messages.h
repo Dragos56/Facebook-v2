@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "network.h"
 
 #define MESSAGE_LENGTH 1000
@@ -23,5 +26,5 @@ void edit_post_description(const char* author, const char* description, int post
 void like_post(const char* username, const char* author, int post_id, char* response);
 void comment_post(const char* username, const char* author, int post_id, const char* comment, char* response);
 void delete_post(const char* author, int post_id, char* response);
-void send_message(const char* username, const char* friend_name, const char* message, char* response);
+void send_message_friend(const char* username, const char* friend_name, const char* message, char* response);
 

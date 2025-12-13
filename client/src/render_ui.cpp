@@ -172,7 +172,7 @@ void render_friends_ui()
 
     if (ImGui::Button("Send message", ImVec2(button_width, button_height)))
     {
-        send_message(connected_username, friend_name, message, response);
+        send_message_friend(connected_username, friend_name, message, response);
         friend_name[0] = '\0';
         message[0] = '\0';
     }
