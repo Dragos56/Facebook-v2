@@ -38,6 +38,7 @@ void threadCreate(int i);
 void stop_server()
 {
     //save_db(&global_db);
+    db_close();
     close(sd);
     pthread_mutex_destroy(&mlock);
     pthread_mutex_destroy(&db_mutex);
@@ -59,6 +60,12 @@ int main(int argc, char *argv[])
     if (nthreads <= 0)
     {
         fprintf(stderr, "Eroare: Numar de fire invalid...\n");
+        exit(1);
+    }
+
+    if (db_init("data/database.db") != 0) 
+    {
+        fprintf(stderr, "EROARE DB, se inchide server-ul...\n");
         exit(1);
     }
 
