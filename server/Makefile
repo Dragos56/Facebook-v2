@@ -1,8 +1,6 @@
-# Compilatoare
 CXX = g++
 CC  = gcc
 
-# Directoare
 SRC_DIR = src
 LIB_DIR = lib
 OBJ_DIR = build
