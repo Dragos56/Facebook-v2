@@ -1,126 +1,160 @@
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <netinet/in.h>
-#include <unistd.h>
 #include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
-#include <arpa/inet.h>
 #include <string.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <pthread.h>
+#include <stdint.h>
 #include "handle_commands.h"
+#include "database.h"
 
 #define PORT 5656
 
 extern int errno;
 
-char *conv_addr(struct sockaddr_in address) 
+typedef struct
 {
-    static char str[25];
-    char port[7];
+    pthread_t idThread;
+    int thCount;
+} Thread;
 
-    strcpy (str, inet_ntoa (address.sin_addr));
-    bzero (port, 7);
-    sprintf (port, ":%d", ntohs (address.sin_port));
-    strcat (str, port);
-    return (str);
+Thread *threadsPool;
+int sd;
+int nthreads;
+pthread_mutex_t mlock = PTHREAD_MUTEX_INITIALIZER;
+
+static void *treat(void *);
+void raspunde(int client, int idThread);
+void threadCreate(int i);
+
+void stop_server()
+{
+    db_close();
+    close(sd);
+    pthread_mutex_destroy(&mlock);
+    free(threadsPool);
+    exit(0);
 }
 
-int main ()
+int main(int argc, char *argv[])
 {
-    struct sockaddr_in server;	
-    struct sockaddr_in from;
-    fd_set readfds;		
-    fd_set actfds;		
-    struct timeval tv;		
-    int sd, client;		
-    int optval=1; 		
-    int fd;			
-    int nfds;		
-    socklen_t len;	
+    struct sockaddr_in server;
 
-    if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+    if (argc < 2)
     {
-        perror ("[server] Eroare la socket().\n");
+        fprintf(stderr, "Eroare: Primul argument este numarul de fire de executie...\n");
+        exit(1);
+    }
+
+    nthreads = atoi(argv[1]);
+    if (nthreads <= 0)
+    {
+        fprintf(stderr, "Eroare: Numar de fire invalid...\n");
+        exit(1);
+    }
+
+    if (db_init("data/database.db") != 0) 
+    {
+        fprintf(stderr, "EROARE DB, se inchide server-ul...\n");
+        exit(1);
+    }
+
+    //signal(SIGINT, stop_server());
+
+    threadsPool = (Thread*)calloc(sizeof(Thread), nthreads);
+
+    if ((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        perror("[server] Eroare la socket().\n");
         return errno;
     }
 
-    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    int on = 1;
+    setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
-    bzero (&server, sizeof (server));
-
+    bzero(&server, sizeof(server));
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = htonl (INADDR_ANY);
-    server.sin_port = htons (PORT);
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(PORT);
 
-    if (bind (sd, (struct sockaddr *) &server, sizeof (struct sockaddr)) == -1)
+    if (bind(sd, (struct sockaddr *)&server, sizeof(struct sockaddr)) == -1)
     {
-        perror ("[server] Eroare la bind().\n");
+        perror("[server] Eroare la bind().\n");
         return errno;
     }
 
-    if (listen (sd, 5) == -1)
+    if (listen(sd, nthreads) == -1)
     {
-        perror ("[server] Eroare la listen().\n");
+        perror("[server] Eroare la listen().\n");
         return errno;
     }
 
-    FD_ZERO (&actfds);	
-    FD_SET (sd, &actfds);	
+    printf("Nr threaduri %d \n", nthreads);
+    fflush(stdout);
 
-    tv.tv_sec = 1;	
-    tv.tv_usec = 0;
+    int i;
+    for (i = 0; i < nthreads; i++)
+    {
+        threadCreate(i);
+    }
 
-    nfds = sd;
+    for (;;)
+    {
+        printf("[server] Asteptam la portul %d...\n", PORT);
+        pause();
+    }
+}
 
-    printf ("[server] Asteptam la portul %d...\n", PORT);
-    fflush (stdout);
+void threadCreate(int i)
+{
+    pthread_create(&threadsPool[i].idThread, NULL, &treat, (void *)(intptr_t)i);
+    return;
+}
+
+void *treat(void *arg)
+{
+    int client;
+    struct sockaddr_in from;
+    bzero(&from, sizeof(from));
+    printf("[thread] - %d - pornit...\n", (int)(intptr_t)arg);
+    fflush(stdout);
+
+    for (;;)
+    {
+        int length = sizeof(from);
+
+        pthread_mutex_lock(&mlock);
+        if ((client = accept(sd, (struct sockaddr *)&from, (socklen_t *)&length)) < 0)
+        {
+            perror("[thread] Eroare la accept().\n");
+        }
+        pthread_mutex_unlock(&mlock);
+
+        if (client >= 0)
+        {
+            threadsPool[(int)(intptr_t)arg].thCount++;
+            raspunde(client, (int)(intptr_t)arg);
+            close(client);
+        }
+    }
+}
+
+void raspunde(int client, int idThread)
+{
+    printf("[Thread %d] Client conectat. Procesam comenzi...\n", idThread);
+    fflush(stdout);
 
     while (1)
     {
-        bcopy ((char *) &actfds, (char *) &readfds, sizeof (readfds));
-
-        if (select (nfds+1, &readfds, NULL, NULL, &tv) < 0)
+        if (handle_commands(client))
         {
-            perror ("[server] Eroare la select().\n");
-            return errno;
+            break;
         }
-        
-        if (FD_ISSET (sd, &readfds))
-	    {
-            
-            len = sizeof (from);
-            bzero (&from, sizeof (from));
+    }
 
-            
-            client = accept (sd, (struct sockaddr *) &from, &len);
-
-            if (client < 0)
-            {
-                perror ("[server] Eroare la accept().\n");
-                continue;
-            }
-
-            if (nfds < client) 
-                nfds = client;
-
-            FD_SET (client, &actfds);
-
-            printf("[server] S-a conectat clientul cu descriptorul %d, de la adresa %s.\n",client, conv_addr (from));
-            fflush (stdout);
-	    }
-        for (fd = 0; fd <= nfds; fd++)
-	    {
-            if (fd != sd && FD_ISSET (fd, &readfds))
-            {
-	            if (handle_commands(fd))
-		        {
-                    printf ("[server] S-a deconectat clientul cu descriptorul %d.\n",fd);
-                    fflush (stdout);
-                    close (fd);		
-                    FD_CLR (fd, &actfds);
-		        }
-	        }
-	    }			
-    }				
-}				
-
+    printf("[Thread %d] Client deconectat.\n", idThread);
+}
