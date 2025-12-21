@@ -57,10 +57,10 @@ void login_account(const char* username, const char* password, char* response)
     printf("Received response: %s\n", response);
 }
 
-void logout_account(int* user_id, const char* username, char* response)
+void logout_account(int* user_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "LOGOUT|%d|%s", *user_id, username);
+    snprintf(command, sizeof(command), "LOGOUT|%d", *user_id);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -82,10 +82,10 @@ void logout_account(int* user_id, const char* username, char* response)
     printf("Received response: %s\n", response);
 }
 
-void delete_account(int* user_id, const char* username, char* response)
+void delete_account(int* user_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "DELETE_ACCOUNT|%d|%s", *user_id, username);
+    snprintf(command, sizeof(command), "DELETE_ACCOUNT|%d", *user_id);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -109,10 +109,10 @@ void delete_account(int* user_id, const char* username, char* response)
     printf("Received response: %s\n", response);
 }
 
-void update_name(int user_id, const char* old_username, const char* new_username, char* response)
+void update_display_name(int user_id, const char* display_username, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "UPDATE_NAME|%d|%s|%s", user_id, old_username, new_username);
+    snprintf(command, sizeof(command), "UPDATE_NAME|%d|%s", user_id, display_username);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -130,10 +130,10 @@ void update_name(int user_id, const char* old_username, const char* new_username
     printf("Received response: %s\n", response);
 }
 
-void update_bio(int user_id, const char* username, const char* new_bio, char* response)
+void update_bio(int user_id, const char* new_bio, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "UPDATE_BIO|%d|%s|%s", user_id, username, new_bio);
+    snprintf(command, sizeof(command), "UPDATE_BIO|%d|%s", user_id, new_bio);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -151,10 +151,14 @@ void update_bio(int user_id, const char* username, const char* new_bio, char* re
     printf("Received response: %s\n", response);
 }
 
-void update_password(int user_id, const char* username, const char* old_password, const char* new_password, char* response)
+void update_password(int user_id, const char* old_password, const char* new_password, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "UPDATE_PASSWORD|%d|%s|%s|%s", user_id, username, old_password, new_password);
+    char hashed_old_password[65];
+    char hashed_new_password[65];
+    hash_password(old_password, hashed_old_password);
+    hash_password(new_password, hashed_new_password);
+    snprintf(command, sizeof(command), "UPDATE_PASSWORD|%d|%s|%s", user_id, hashed_old_password, hashed_new_password);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -172,10 +176,10 @@ void update_password(int user_id, const char* username, const char* old_password
     printf("Received response: %s\n", response);
 }
 
-void update_profile_picture(int user_id, const char* username, const char* image_path, char* response)
+void update_profile_avatar(int user_id, const char* image_path, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "UPDATE_PICTURE|%d|%s|%s", user_id, username, image_path);
+    snprintf(command, sizeof(command), "UPDATE_PICTURE|%d|%s", user_id, image_path);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -193,10 +197,10 @@ void update_profile_picture(int user_id, const char* username, const char* image
     printf("Received response: %s\n", response);
 }
 
-void update_profile_visibility(int user_id, const char* username, const char* visibility, char* response)
+void update_profile_visibility(int user_id, int visibility, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "UPDATE_VISIBILITY|%d|%s|%s", user_id, username, visibility);
+    snprintf(command, sizeof(command), "UPDATE_VISIBILITY|%d|%d", user_id, visibility);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -214,10 +218,10 @@ void update_profile_visibility(int user_id, const char* username, const char* vi
     printf("Received response: %s\n", response);
 }
 
-void follow_request(int user_id, const char* username, const char* username_to_follow, char* response)
+void follow_request(int user_id, const char* username_to_follow, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "FOLLOW|%d|%s|%s", user_id, username, username_to_follow);
+    snprintf(command, sizeof(command), "FOLLOW|%d|%s", user_id, username_to_follow);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -235,10 +239,10 @@ void follow_request(int user_id, const char* username, const char* username_to_f
     printf("Received response: %s\n", response);
 }
 
-void accept_follow_request(int user_id, const char* username, const char* username_to_accept, char* response)
+void accept_follow_request(int user_id, const char* username_to_accept, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "ACCEPT_FOLLOW|%d|%s|%s", user_id, username, username_to_accept);
+    snprintf(command, sizeof(command), "ACCEPT_FOLLOW|%d|%s", user_id, username_to_accept);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -256,10 +260,10 @@ void accept_follow_request(int user_id, const char* username, const char* userna
     printf("Received response: %s\n", response);
 }
 
-void reject_follow_request(int user_id, const char* username, const char* username_to_reject, char* response)
+void reject_follow_request(int user_id, const char* username_to_reject, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "REJECT_FOLLOW|%d|%s|%s", user_id, username, username_to_reject);
+    snprintf(command, sizeof(command), "REJECT_FOLLOW|%d|%s", user_id, username_to_reject);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -277,10 +281,10 @@ void reject_follow_request(int user_id, const char* username, const char* userna
     printf("Received response: %s\n", response);
 }
 
-void unfollow_request(int user_id, const char* username, const char* username_to_unfollow, char* response)
+void unfollow_request(int user_id, const char* username_to_unfollow, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "UNFOLLOW|%d|%s|%s", user_id, username, username_to_unfollow);
+    snprintf(command, sizeof(command), "UNFOLLOW|%d|%s", user_id, username_to_unfollow);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -298,10 +302,10 @@ void unfollow_request(int user_id, const char* username, const char* username_to
     printf("Received response: %s\n", response);
 }
 
-void post(int user_id, const char* author, const char* description, const char* image_path, const char* visibility, int post_id, char* response)
+void post(int user_id, const char* description, const char* image_path, int visibility, int post_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "POST|%d|%s|%s|%s|%s|%d", user_id, author, description, image_path, visibility, post_id);
+    snprintf(command, sizeof(command), "POST|%d|%s|%s|%d|%d", user_id, description, image_path, visibility, post_id);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -319,10 +323,10 @@ void post(int user_id, const char* author, const char* description, const char* 
     printf("Received response: %s\n", response);
 }
 
-void edit_post_visibility(int user_id, const char* author, const char* visibility, int post_id, char* response)
+void edit_post_visibility(int user_id, int visibility, int post_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "EDIT_POST_VISIBILITY|%d|%s|%s|%d", user_id, author, visibility, post_id);
+    snprintf(command, sizeof(command), "EDIT_POST_VISIBILITY|%d|%d|%d", user_id, visibility, post_id);
     printf("Sending command: %s\n", command);
     send_message(command);
 
@@ -340,52 +344,10 @@ void edit_post_visibility(int user_id, const char* author, const char* visibilit
     printf("Received response: %s\n", response);
 }
 
-void edit_post_description(int user_id, const char* author, const char* description, int post_id, char* response)
+void edit_post_description(int user_id, int post_id, const char* description, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "EDIT_POST_DESCRIPTION|%d|%s|%s|%d", user_id, author, description, post_id);
-    printf("Sending command: %s\n", command);
-    send_message(command);
-    
-    char buffer[MESSAGE_LENGTH];
-    int n = receive_message(buffer);
-    if (n > 0) 
-    {
-        buffer[n] = '\0';
-        strcpy(response, buffer);
-    } 
-    else 
-    {
-        strcpy(response, "Eroare la primire.");
-    }
-    printf("Received response: %s\n", response);
-}
-
-void like_post(int user_id, const char* username, const char* author, int post_id, char* response)
-{
-    char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "LIKE_POST|%d|%s|%s|%d", user_id, username, author, post_id);
-    printf("Sending command: %s\n", command);
-    send_message(command);
-
-    char buffer[MESSAGE_LENGTH];
-    int n = receive_message(buffer);
-    if (n > 0) 
-    {
-        buffer[n] = '\0';
-        strcpy(response, buffer);
-    } 
-    else 
-    {
-        strcpy(response, "Eroare la primire.");
-    }
-    printf("Received response: %s\n", response);
-}
-
-void comment_post(int user_id, const char* username, const char* author, int post_id, const char* comment, char* response)
-{
-    char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "COMMENT_POST|%d|%s|%s|%d|%s", user_id, username, author, post_id, comment);
+    snprintf(command, sizeof(command), "EDIT_POST_DESCRIPTION|%d|%d|%s", user_id, post_id, description);
     printf("Sending command: %s\n", command);
     send_message(command);
     
@@ -403,10 +365,31 @@ void comment_post(int user_id, const char* username, const char* author, int pos
     printf("Received response: %s\n", response);
 }
 
-void delete_post(int user_id, const char* author, int post_id, char* response)
+void like_post(int user_id, int post_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "DELETE_POST|%d|%s|%d", user_id, author, post_id);
+    snprintf(command, sizeof(command), "LIKE_POST|%d|%d", user_id, post_id);
+    printf("Sending command: %s\n", command);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void comment_post(int user_id, int post_id, const char* comment, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "COMMENT_POST|%d|%d|%s", user_id, post_id, comment);
     printf("Sending command: %s\n", command);
     send_message(command);
     
@@ -424,10 +407,31 @@ void delete_post(int user_id, const char* author, int post_id, char* response)
     printf("Received response: %s\n", response);
 }
 
-void send_message_friend(int user_id, const char* username, const char* friend_name, const char* message, char* response)
+void delete_post(int user_id, int post_id, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "SEND_MESSAGE_FRIEND|%d|%s|%s|%s", user_id, username, friend_name, message);
+    snprintf(command, sizeof(command), "DELETE_POST|%d|%d", user_id, post_id);
+    printf("Sending command: %s\n", command);
+    send_message(command);
+    
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void send_message_friend(int user_id, const char* friend_name, const char* message, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "SEND_MESSAGE_FRIEND|%d|%s|%s", user_id, friend_name, message);
     printf("Sending command: %s\n", command);
     send_message(command);
 
