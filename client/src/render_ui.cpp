@@ -7,6 +7,15 @@ static bool showLogin = false;
 static bool showRegister = false;
 static char connected_username[USERNAME_LENGTH] = "";
 
+void client_shutdown()
+{
+    if (user_id != -1) 
+    {
+        char response[MESSAGE_LENGTH];
+        logout_account(&user_id, response);
+    }
+}
+
 void render_login_window(float total_width, float total_height)
 {
     ImVec2 popup_size = ImVec2(total_width * 0.25f, total_height * 0.20f);

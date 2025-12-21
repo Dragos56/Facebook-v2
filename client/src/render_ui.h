@@ -20,6 +20,7 @@ enum STATE
     PROFILE
 };
 
+void client_shutdown();
 void render_login_window(float total_width, float total_height);
 void render_register_window(float total_width, float total_height);
 void render_friends_ui();

@@ -49,10 +49,12 @@ int main() {
         glfwSwapBuffers(window);
     }
 
+    client_shutdown();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     glfwTerminate();
-
+    
     return 0;
 }
