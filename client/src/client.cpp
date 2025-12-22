@@ -40,7 +40,8 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        render_ui();
+        ImVec2 size = ImGui::GetIO().DisplaySize;
+        render_ui(size.x, size.y);
 
         ImGui::Render();
         glClear(GL_COLOR_BUFFER_BIT);

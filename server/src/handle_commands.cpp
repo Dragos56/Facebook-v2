@@ -415,6 +415,226 @@ int handle_send_message_friend(int client_fd, char* args)
     return 0;
 }
 
+int handle_get_profile(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int user_id = atoi(p);
+    
+    char username[USERNAME_LENGTH];
+    char bio[BIO_LENGTH];
+    char display_name[USERNAME_LENGTH];
+    char avatar_path[PATH_LENGTH];
+    int visibility;
+
+    if(db_get_profile(user_id, username, bio, display_name, avatar_path, &visibility)==-1)
+    {
+        const char* response = "GET_PROFILE ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[1000];
+    snprintf(response, sizeof(response), "GET_PROFILE OK|%s|%s|%s|%s|%d", username, bio, display_name, avatar_path, visibility);
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_friends_list(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int user_id = atoi(p);
+
+    Friend friends[MAX_FRIENDS];
+    int friend_count = 0;
+
+    if(db_get_friends_list(user_id, friends, MAX_FRIENDS, &friend_count)==-1)
+    {
+        const char* response = "GET_FRIENDS_LIST ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    int offset = snprintf(response, sizeof(response), "GET_FRIENDS_LIST OK|%d", friend_count);
+    for(int i=0; i<friend_count; i++)
+    {
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d,%s", friends[i].user_id, friends[i].username);
+    }
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_follow_requests(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int user_id = atoi(p);
+
+    int request_ids[MAX_FOLLOW_REQUESTS];
+    int request_count = 0;
+
+    if(db_get_follow_requests(user_id, request_ids, MAX_FOLLOW_REQUESTS, &request_count)==-1)
+    {
+        const char* response = "GET_FOLLOW_REQUESTS ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    int offset = snprintf(response, sizeof(response), "GET_FOLLOW_REQUESTS OK|%d", request_count);
+    for(int i=0; i<request_count; i++)
+    {
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d", request_ids[i]);
+    }
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_user_posts(int client_fd, char* args)
+{
+    char *p = strtok(args, "|");
+    int user_id = atoi(p);
+
+    Post posts[MAX_POSTS];
+    int post_count = 0;
+
+    if(db_get_user_posts(user_id, posts, MAX_POSTS, &post_count) == -1)
+    {
+        const char* response = "GET_USER_POSTS ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    int offset = snprintf(response, sizeof(response), "GET_USER_POSTS OK|%d", post_count);
+
+    for(int i = 0; i < post_count; i++)
+    {
+        char desc[MESSAGE_LENGTH] = "";
+        char uname[USERNAME_LENGTH] = "";
+
+        for(int j = 0; posts[i].description[j] && j < MESSAGE_LENGTH-1; j++)
+        {
+            desc[j] = (posts[i].description[j] == '|' || posts[i].description[j] == ',') ? '_' : posts[i].description[j];
+        }
+        desc[MESSAGE_LENGTH-1] = '\0';
+
+        for(int j = 0; posts[i].username[j] && j < USERNAME_LENGTH-1; j++)
+        {
+            uname[j] = (posts[i].username[j] == '|' || posts[i].username[j] == ',') ? '_' : posts[i].username[j];
+        }
+        uname[USERNAME_LENGTH-1] = '\0';
+
+        offset += snprintf(response + offset, sizeof(response) - offset,
+                           "|%d,%d,%s,%d,%s,%s,%d",
+                           posts[i].post_id,
+                           posts[i].user_id,
+                           desc,
+                           posts[i].visibility,
+                           posts[i].image_path,
+                           uname,
+                           posts[i].like_count);
+
+        if(offset >= MESSAGE_LENGTH - 100) break;
+    }
+    send_message(client_fd, response);
+    return 0;
+}
+
+
+int handle_get_feed(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int user_id = atoi(p);
+
+    Post posts[MAX_POSTS];
+    int post_count = 0;
+    if(db_get_feed(user_id, posts, MAX_POSTS, &post_count)==-1)
+    {
+        const char* response = "GET_FEED ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+    char response[MESSAGE_LENGTH];
+    int offset = snprintf(response, sizeof(response), "GET_FEED OK|%d", post_count);
+    for(int i=0; i<post_count; i++)
+    {
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d,%d,%s,%d,%s,%s,%d", posts[i].post_id, posts[i].user_id, posts[i].description, posts[i].visibility, posts[i].image_path, posts[i].username, posts[i].like_count);
+    }
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_post_likes(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int post_id = atoi(p);
+
+    int user_ids[MAX_LIKES];
+    int like_count = 0;
+
+    if(db_get_post_likes(post_id, user_ids, MAX_LIKES, &like_count)==-1)
+    {
+        const char* response = "GET_POST_LIKES ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    int offset = snprintf(response, sizeof(response), "GET_POST_LIKES OK|%d", like_count);
+    for(int i=0; i<like_count; i++)
+    {
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d", user_ids[i]);
+    }
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_post_comments(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int post_id = atoi(p);
+
+    int user_ids[MAX_COMMENTS];
+    char comments[MAX_COMMENTS][COMMENT_LENGTH];
+    int comment_count = 0;
+
+    if(db_get_post_comments(post_id, user_ids, comments, MAX_COMMENTS, &comment_count)==-1)
+    {
+        const char* response = "GET_POST_COMMENTS ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    int offset = snprintf(response, sizeof(response), "GET_POST_COMMENTS OK|%d", comment_count);
+    for(int i=0; i<comment_count; i++)
+    {
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d,%s", user_ids[i], comments[i]);
+    }
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_username_by_id(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int user_id = atoi(p);
+
+    char username[USERNAME_LENGTH];
+
+    if(db_get_username_by_id(user_id, username)==-1)
+    {
+        const char* response = "GET_USERNAME_BY_ID ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    snprintf(response, sizeof(response), "GET_USERNAME_BY_ID OK|%s", username);
+    send_message(client_fd, response);
+    return 0;
+}
+
 int handle_commands(int client_fd)
 {
     int msg_length;
@@ -529,6 +749,38 @@ int handle_commands(int client_fd)
     else if (strcmp(command, "SEND_MESSAGE_FRIEND") == 0)
     {
         return handle_send_message_friend(client_fd, args);
+    }
+    else if (strcmp(command, "GET_PROFILE") == 0)
+    {
+        return handle_get_profile(client_fd, args);
+    }
+    else if (strcmp(command, "GET_FRIENDS_LIST") == 0)
+    {
+        return handle_get_friends_list(client_fd, args);
+    }
+    else if (strcmp(command, "GET_FOLLOW_REQUESTS") == 0)
+    {
+        return handle_get_follow_requests(client_fd, args);
+    }
+    else if (strcmp(command, "GET_USER_POSTS") == 0)
+    {
+        return handle_get_user_posts(client_fd, args);
+    }
+    else if (strcmp(command, "GET_FEED") == 0)
+    {
+        return handle_get_feed(client_fd, args);
+    }
+    else if (strcmp(command, "GET_POST_LIKES") == 0)
+    {
+        return handle_get_post_likes(client_fd, args);
+    }
+    else if (strcmp(command, "GET_POST_COMMENTS") == 0)
+    {
+        return handle_get_post_comments(client_fd, args);
+    }
+    else if (strcmp(command, "GET_USERNAME_BY_ID") == 0)
+    {
+        return handle_get_username_by_id(client_fd, args);
     }
 
     return 0;

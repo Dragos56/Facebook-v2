@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "network.h"
+#include "structure.h"
 
 #define MESSAGE_LENGTH 1000
 
@@ -27,3 +28,11 @@ void like_post(int user_id, int post_id, char* response);
 void comment_post(int user_id, int post_id, const char* comment, char* response);
 void delete_post(int user_id, int post_id, char* response);
 void send_message_friend(int user_id, const char* friend_name, const char* message, char* response);
+void get_profile(int user_id, char* username, char* bio, char* display_name, char* avatar_path, int* visibility, char* response);
+void get_friends_list(int user_id, Friend* friends, int* friend_count, char* response);
+void get_follow_requests(int user_id, Request* requests, int* request_count, char* response);
+void get_user_posts(int user_id, Post* posts, int* post_count, char* response);
+void get_feed(int user_id, Post* posts, int* post_count, char* response);
+void get_post_likes(int post_id, int* user_ids, int* like_count, char* response);
+void get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGTH], int* comment_count, char* response);   
+void get_username_by_id(int user_id, char* username, char* response);

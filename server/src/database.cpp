@@ -3,6 +3,12 @@
 sqlite3 *db_conn = NULL;
 pthread_mutex_t db_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+Friend friends[MAX_FRIENDS];
+int friend_count;
+
+static Post feed[MAX_POSTS];
+static int feed_count = 0;
+
 int db_init(const char* filename)
 {
     int rc = sqlite3_open(filename, &db_conn);
@@ -402,130 +408,191 @@ int db_comment_post(int user_id, int post_id, const char* comment)
     return rc;
 }
 
-int db_get_profile(int user_id, char* username, char* bio, char* display_name, char* avatar_path, int* visibility)
-{
+int db_get_profile(int user_id, char* username, char* bio, char* display_name, char* avatar_path, int* visibility) {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
+
     sqlite3_prepare_v2(db_conn, "SELECT username, bio, display_name, avatar_path, visibility FROM users WHERE id = ?", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
-    int rc = -1;
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
+
+    if (sqlite3_step(stmt) == SQLITE_ROW) 
+    {
         const unsigned char* uname = sqlite3_column_text(stmt, 0);
         const unsigned char* b = sqlite3_column_text(stmt, 1);
         const unsigned char* dname = sqlite3_column_text(stmt, 2);
         const unsigned char* avatar = sqlite3_column_text(stmt, 3);
         int vis = sqlite3_column_int(stmt, 4);
 
-        if (uname) strcpy(username, (const char*)uname); else username[0] = '\0';
-        if (b) strcpy(bio, (const char*)b); else bio[0] = '\0';
-        if (dname) strcpy(display_name, (const char*)dname); else display_name[0] = '\0';
-        if (avatar) strcpy(avatar_path, (const char*)avatar); else avatar_path[0] = '\0';
-        *visibility = vis;
+        if (uname && strlen((const char*)uname) > 0) 
+        {
+            strncpy(username, (const char*)uname, USERNAME_LENGTH-1);
+            username[USERNAME_LENGTH-1] = '\0';
+        } 
+        else 
+        {
+            strncpy(username, "UnknownUser", USERNAME_LENGTH-1);
+            username[USERNAME_LENGTH-1] = '\0';
+        }
 
-        rc = 0;
+        if (b && strlen((const char*)b) > 0) 
+        {
+            strncpy(bio, (const char*)b, BIO_LENGTH-1);
+            bio[BIO_LENGTH-1] = '\0';
+        } 
+        else 
+        {
+            strncpy(bio, "This user has no bio.", BIO_LENGTH-1);
+            bio[BIO_LENGTH-1] = '\0';
+        }
+
+        if (dname && strlen((const char*)dname) > 0) 
+        {
+            strncpy(display_name, (const char*)dname, USERNAME_LENGTH-1);
+            display_name[USERNAME_LENGTH-1] = '\0';
+        } 
+        else 
+        {
+            strncpy(display_name, username, USERNAME_LENGTH-1);
+            display_name[USERNAME_LENGTH-1] = '\0';
+        }
+
+        if (avatar && strlen((const char*)avatar) > 0) 
+        {
+            strncpy(avatar_path, (const char*)avatar, PATH_LENGTH-1);
+            avatar_path[PATH_LENGTH-1] = '\0';
+        } 
+        else 
+        {
+            strncpy(avatar_path, "default.png", PATH_LENGTH-1);
+            avatar_path[PATH_LENGTH-1] = '\0';
+        }
+
+        *visibility = vis;
     }
+
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
 
-int db_get_friends_list(int user_id, int* friend_ids, int max_friends, int* friend_count)
-{
+int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* friend_count) {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, 
-        "SELECT sender_id FROM friend_requests WHERE receiver_id = ? AND status = 1 "
-        "UNION "
-        "SELECT receiver_id FROM friend_requests WHERE sender_id = ? AND status = 1", 
+
+    sqlite3_prepare_v2(db_conn,
+        "SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS friend_id, u.username "
+        "FROM friend_requests fr "
+        "JOIN users u ON (CASE WHEN fr.sender_id = ? THEN fr.receiver_id ELSE fr.sender_id END) = u.id "
+        "WHERE (fr.sender_id = ? OR fr.receiver_id = ?) AND fr.status = 1",
         -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_int(stmt, 2, user_id);
+    sqlite3_bind_int(stmt, 3, user_id);
+    sqlite3_bind_int(stmt, 4, user_id);
 
     int count = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_friends) {
-        friend_ids[count++] = sqlite3_column_int(stmt, 0);
+    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_friends) 
+    {
+        friends[count].user_id = sqlite3_column_int(stmt, 0);
+        const unsigned char* uname = sqlite3_column_text(stmt, 1);
+        if (uname) 
+            strncpy(friends[count].username, (const char*)uname, USERNAME_LENGTH-1);
+        friends[count].username[USERNAME_LENGTH-1] = '\0';
+        count++;
     }
     *friend_count = count;
 
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
-    return 0;
+    return rc;
 }
 
-int db_get_follow_requests(int user_id, int* request_ids, int max_requests, int* request_count)
-{
+int db_get_follow_requests(int user_id, int* request_ids, int max_requests, int* request_count) {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, 
-        "SELECT sender_id FROM friend_requests WHERE receiver_id = ? AND status = 0", 
-        -1, &stmt, NULL);
+
+    sqlite3_prepare_v2(db_conn, "SELECT sender_id FROM friend_requests WHERE receiver_id = ? AND status = 0", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
 
     int count = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_requests) {
+    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_requests) 
+    {
         request_ids[count++] = sqlite3_column_int(stmt, 0);
     }
     *request_count = count;
 
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
-    return 0;
+    return rc;
 }
 
-int db_get_user_posts(int user_id, Post* posts, int max_posts, int* post_count)
-{
+int db_get_user_posts(int user_id, Post* posts, int max_posts, int* post_count) {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, 
+
+    sqlite3_prepare_v2(db_conn,
         "SELECT p.id, p.user_id, u.username, p.description, p.image_path, p.visibility, "
-        "(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count, "
-        "(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_count "
+        "(SELECT COUNT(*) FROM likes WHERE post_id = p.id), "
+        "(SELECT COUNT(*) FROM comments WHERE post_id = p.id) "
         "FROM posts p JOIN users u ON p.user_id = u.id "
-        "WHERE p.user_id = ? "
-        "ORDER BY p.created_at DESC", 
+        "WHERE p.user_id = ? ORDER BY p.created_at DESC",
         -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
 
     int count = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_posts) {
+    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_posts) 
+    {
+        memset(&posts[count], 0, sizeof(Post));
+
         posts[count].post_id = sqlite3_column_int(stmt, 0);
         posts[count].user_id = sqlite3_column_int(stmt, 1);
-        const unsigned char* uname = sqlite3_column_text(stmt, 2);
-        const unsigned char* desc = sqlite3_column_text(stmt, 3);
-        const unsigned char* img_path = sqlite3_column_text(stmt, 4);
-        posts[count].visibility = sqlite3_column_int(stmt, 5);
-        posts[count].like_count = sqlite3_column_int(stmt, 6);
-        posts[count].comment_count = sqlite3_column_int(stmt, 7);
 
-        if (uname) strcpy(posts[count].username, (const char*)uname); else posts[count].username[0] = '\0';
-        if (desc) strcpy(posts[count].description, (const char*)desc); else posts[count].description[0] = '\0';
-        if (img_path) strcpy(posts[count].image_path, (const char*)img_path); else posts[count].image_path[0] = '\0';
+        const unsigned char* uname = sqlite3_column_text(stmt, 2);
+        const unsigned char* desc  = sqlite3_column_text(stmt, 3);
+        const unsigned char* img   = sqlite3_column_text(stmt, 4);
+
+        posts[count].visibility   = sqlite3_column_int(stmt, 5);
+        posts[count].like_count   = sqlite3_column_int(stmt, 6);
+        posts[count].comment_count= sqlite3_column_int(stmt, 7);
+
+        strncpy(posts[count].username, uname ? (const char*)uname : "Unknown", USERNAME_LENGTH-1);
+        posts[count].username[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(posts[count].description, desc ? (const char*)desc : "No description", MESSAGE_LENGTH-1);
+        posts[count].description[MESSAGE_LENGTH-1] = '\0';
+
+        strncpy(posts[count].image_path, img ? (const char*)img : "default.png", PATH_LENGTH-1);
+        posts[count].image_path[PATH_LENGTH-1] = '\0';
 
         count++;
     }
-    *post_count = count;
 
+    *post_count = count;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
     return 0;
 }
 
-int db_get_feed(int user_id, Post* posts, int max_posts, int* post_count)
-{
+int db_get_feed(int user_id, Post* posts, int max_posts, int* post_count) {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, 
+
+    sqlite3_prepare_v2(db_conn,
         "SELECT p.id, p.user_id, u.username, p.description, p.image_path, p.visibility, "
-        "(SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) AS like_count, "
-        "(SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comment_count "
+        "(SELECT COUNT(*) FROM likes WHERE post_id = p.id), "
+        "(SELECT COUNT(*) FROM comments WHERE post_id = p.id) "
         "FROM posts p JOIN users u ON p.user_id = u.id "
         "WHERE p.user_id IN ("
-        "   SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS friend_id "
+        "   SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END "
         "   FROM friend_requests "
         "   WHERE (sender_id = ? OR receiver_id = ?) AND status = 1"
         ") "
-        "ORDER BY p.created_at DESC", 
+        "ORDER BY p.created_at DESC",
         -1, &stmt, NULL);
+
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_int(stmt, 2, user_id);
     sqlite3_bind_int(stmt, 3, user_id);
@@ -534,70 +601,119 @@ int db_get_feed(int user_id, Post* posts, int max_posts, int* post_count)
     while (sqlite3_step(stmt) == SQLITE_ROW && count < max_posts) {
         posts[count].post_id = sqlite3_column_int(stmt, 0);
         posts[count].user_id = sqlite3_column_int(stmt, 1);
+
         const unsigned char* uname = sqlite3_column_text(stmt, 2);
         const unsigned char* desc = sqlite3_column_text(stmt, 3);
         const unsigned char* img_path = sqlite3_column_text(stmt, 4);
+
         posts[count].visibility = sqlite3_column_int(stmt, 5);
         posts[count].like_count = sqlite3_column_int(stmt, 6);
         posts[count].comment_count = sqlite3_column_int(stmt, 7);
 
-        if (uname) strcpy(posts[count].username, (const char*)uname); else posts[count].username[0] = '\0';
-        if (desc) strcpy(posts[count].description, (const char*)desc); else posts[count].description[0] = '\0';
-        if (img_path) strcpy(posts[count].image_path, (const char*)img_path); else posts[count].image_path[0] = '\0';
+        if (uname) 
+        {
+            strncpy(posts[count].username, (const char*)uname, USERNAME_LENGTH-1); 
+            posts[count].username[USERNAME_LENGTH-1] = '\0';
+        }
+        if (desc) 
+        {
+            strncpy(posts[count].description, (const char*)desc, MESSAGE_LENGTH-1); 
+            posts[count].description[MESSAGE_LENGTH-1] = '\0';
+        }
+        if (img_path) 
+        {
+            strncpy(posts[count].image_path, (const char*)img_path, PATH_LENGTH-1); 
+            posts[count].image_path[PATH_LENGTH-1] = '\0';
+        }
 
         count++;
     }
     *post_count = count;
 
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
-    return 0;
+    return rc;
 }
 
-int db_get_post_likes(int post_id, int* user_ids, int max_likes, int* like_count)
+int db_get_post_likes(int post_id, int* user_ids, int max_likes, int* like_count) 
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, 
-        "SELECT user_id FROM likes WHERE post_id = ?", 
+
+    sqlite3_prepare_v2(db_conn,
+        "SELECT user_id FROM likes WHERE post_id = ?",
         -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, post_id);
 
     int count = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_likes) {
+    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_likes) 
+    {
         user_ids[count++] = sqlite3_column_int(stmt, 0);
     }
     *like_count = count;
 
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
-    return 0;
+    return rc;
 }
 
-int db_get_post_comments(int post_id, int* user_ids, char comments[][256], int max_comments, int* comment_count)
+int db_get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGTH], int max_comments, int* comment_count) 
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, 
-        "SELECT user_id, content FROM comments WHERE post_id = ?", 
+
+    sqlite3_prepare_v2(db_conn,
+        "SELECT user_id, content FROM comments WHERE post_id = ?",
         -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, post_id);
 
     int count = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_comments) {
+    while (sqlite3_step(stmt) == SQLITE_ROW && count < max_comments) 
+    {
         user_ids[count] = sqlite3_column_int(stmt, 0);
+
         const unsigned char* comment_text = sqlite3_column_text(stmt, 1);
-        if (comment_text) {
-            strncpy(comments[count], (const char*)comment_text, 255);
-            comments[count][255] = '\0'; 
-        } else {
+        if (comment_text) 
+        {
+            strncpy(comments[count], (const char*)comment_text, COMMENT_LENGTH-1);
+            comments[count][COMMENT_LENGTH-1] = '\0';
+        } 
+        else 
             comments[count][0] = '\0';
-        }
+
         count++;
     }
     *comment_count = count;
 
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
-    return 0;
+    return rc;
+}
+
+int db_get_username_by_id(int user_id, char* username) 
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn, "SELECT username FROM users WHERE id = ?", -1, &stmt, NULL);
+    sqlite3_bind_int(stmt, 1, user_id);
+
+    int rc = -1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) 
+    {
+        const unsigned char* uname = sqlite3_column_text(stmt, 0);
+        if (uname) 
+        {
+            strncpy(username, (const char*)uname, USERNAME_LENGTH-1); 
+            username[USERNAME_LENGTH-1] = '\0';
+            rc = 0;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return rc;
 }

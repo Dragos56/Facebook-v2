@@ -8,9 +8,6 @@
 #include "database.h"
 
 #define MESSAGE_LENGTH 1000
-#define USERNAME_LENGTH 50
-#define PASSWORD_LENGTH 65
-
 
 int send_message(int client_fd, const char* msg);
 int handle_commands(int client_fd);
@@ -39,3 +36,11 @@ int handle_like_post(int client_fd, char* args);
 int handle_comment_post(int client_fd, char* args);
 
 int handle_send_message_friend(int client_fd, char* args);
+
+int handle_get_profile(int client_fd, char* args);
+int handle_get_friends_list(int client_fd, char* args);
+int handle_get_follow_requests(int client_fd, char* args);
+int handle_get_user_posts(int client_fd, char* args);
+int handle_get_feed(int client_fd, char* args);
+int handle_get_post_likes(int client_fd, char* args);
+int handle_get_post_comments(int client_fd, char* args);

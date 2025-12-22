@@ -7,6 +7,19 @@
 #include "sqlite3.h"
 #include <pthread.h>
 
+#define USERNAME_LENGTH 100
+#define PASSWORD_LENGTH 100
+#define MESSAGE_LENGTH 1000
+#define BIO_LENGTH 1000
+#define PATH_LENGTH 100
+#define VISIBILITY_LENGTH 10
+#define MAX_POSTS 100
+#define MAX_FRIENDS 100
+#define MAX_LIKES 100
+#define MAX_COMMENTS 100
+#define MAX_FOLLOW_REQUESTS 100
+#define COMMENT_LENGTH 256
+
 int db_init(const char* filename);
 void db_close();
 
@@ -34,26 +47,50 @@ int db_delete_post(int user_id, int post_id);
 int db_like_post(int user_id, int post_id);
 int db_comment_post(int user_id, int post_id, const char* comment);
 
-int db_get_profile(int user_id, char* username, char* bio, char* display_name, char* avatar_path, int* visibility);
+typedef struct {
+    int post_id;
+    int user_ids[MAX_LIKES];
+    int like_count;
+} Likes;
 
-int db_get_friends_list(int user_id, int* friend_ids, int max_friends, int* friend_count);
-int db_get_follow_requests(int user_id, int* request_ids, int max_requests, int* request_count);
+typedef struct {
+    int post_id;
+    int user_ids[MAX_COMMENTS];
+    char comments[MAX_COMMENTS][COMMENT_LENGTH];
+    int comment_count;
+} Comments;
+
+typedef struct {
+    int user_id;
+    char username[USERNAME_LENGTH];
+} Friend;
 
 typedef struct {
     int post_id;
     int user_id;
-    char username[50];
-    char description[512];
-    char image_path[256];
+    char description[MESSAGE_LENGTH];
     int visibility;
+    char image_path[PATH_LENGTH];
+    char username[USERNAME_LENGTH];
+    
     int like_count;
+    int likes[MAX_LIKES];
+
     int comment_count;
+    int comment_user_ids[MAX_COMMENTS];
+    char comments[MAX_COMMENTS][COMMENT_LENGTH];
 } Post;
+
+int db_get_profile(int user_id, char* username, char* bio, char* display_name, char* avatar_path, int* visibility);
+
+int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* friend_count);
+
+int db_get_follow_requests(int user_id, int* request_ids, int max_requests, int* request_count);
 
 int db_get_user_posts(int user_id, Post* posts, int max_posts, int* post_count);
 int db_get_feed(int user_id, Post* posts, int max_posts, int* post_count);
 int db_get_post_likes(int post_id, int* user_ids, int max_likes, int* like_count);
-int db_get_post_comments(int post_id, int* user_ids, char comments[][256], int max_comments, int* comment_count);
+int db_get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGTH], int max_comments, int* comment_count);
 
-
+int db_get_username_by_id(int user_id, char* username);
 
