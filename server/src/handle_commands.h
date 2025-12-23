@@ -20,7 +20,6 @@ int handle_delete_account(int client_fd, char* args);
 int handle_update_display_name(int client_fd, char* args);
 int handle_update_bio(int client_fd, char* args);
 int handle_update_password(int client_fd, char* args);
-int handle_update_avatar_path(int client_fd, char* args);
 int handle_update_visibility(int client_fd, char* args);
 
 int handle_follow_request(int client_fd, char* args);

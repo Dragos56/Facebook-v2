@@ -162,25 +162,6 @@ int handle_update_password(int client_fd, char* args)
     return 0;
 }
 
-int handle_update_avatar_path(int client_fd, char* args)
-{
-    char* p=strtok(args, "|");
-    int user_id = atoi(p);
-    p=strtok(NULL, "|");
-    char avatar_path[100];
-    strcpy(avatar_path, p);
-    if(db_update_profile_avatar_path(user_id, avatar_path)==-1)
-    {
-        const char* response = "UPDATE_PICTURE ERROR|Database error";
-        send_message(client_fd, response);
-        return 0;
-    }
-
-    const char* response = "UPDATE_PICTURE OK";
-    send_message(client_fd, response);
-    return 0;
-}
-
 int handle_update_visibility(int client_fd, char* args)
 {
     char* p=strtok(args, "|");
@@ -283,17 +264,14 @@ int handle_create_post(int client_fd, char* args)
     char *p=strtok(args, "|");
     int user_id = atoi(p);
     p=strtok(NULL, "|");
-    char description[200];
-    strcpy(description, p);
-    p=strtok(NULL, "|");
-    char image_path[100];
-    strcpy(image_path, p);
+    char content[200];
+    strcpy(content, p);
     p=strtok(NULL, "|");
     int visibility = atoi(p);
-    p=strtok(NULL, "|");
-    int post_id = atoi(p);
 
-    if(db_create_post(user_id, description, image_path, visibility, &post_id)==-1)
+    int post_id;
+
+    if(db_create_post(user_id, content, visibility, &post_id)==-1)
     {
         const char* response = "CREATE_POST ERROR|Database error";
         send_message(client_fd, response);
@@ -305,24 +283,24 @@ int handle_create_post(int client_fd, char* args)
     return 0;
 }
 
-int handle_edit_post_description(int client_fd, char* args)
+int handle_edit_post_content(int client_fd, char* args)
 {
     char *p=strtok(args, "|");
     int user_id = atoi(p);
     p=strtok(NULL, "|");
     int post_id = atoi(p);
     p=strtok(NULL, "|");
-    char new_description[200];
-    strcpy(new_description, p);
+    char new_content[200];
+    strcpy(new_content, p);
 
-    if(db_edit_post_description(user_id, post_id, new_description)==-1)
+    if(db_edit_post_content(user_id, post_id, new_content)==-1)
     {
-        const char* response = "EDIT_POST_DESCRIPTION ERROR|Database error";
+        const char* response = "EDIT_POST_content ERROR|Database error";
         send_message(client_fd, response);
         return 0;
     }
 
-    const char* response = "EDIT_POST_DESCRIPTION OK";
+    const char* response = "EDIT_POST_content OK";
     send_message(client_fd, response);
     return 0;
 }
@@ -423,10 +401,9 @@ int handle_get_profile(int client_fd, char* args)
     char username[USERNAME_LENGTH];
     char bio[BIO_LENGTH];
     char display_name[USERNAME_LENGTH];
-    char avatar_path[PATH_LENGTH];
     int visibility;
 
-    if(db_get_profile(user_id, username, bio, display_name, avatar_path, &visibility)==-1)
+    if(db_get_profile(user_id, username, bio, display_name, &visibility)==-1)
     {
         const char* response = "GET_PROFILE ERROR|Database error";
         send_message(client_fd, response);
@@ -434,7 +411,8 @@ int handle_get_profile(int client_fd, char* args)
     }
 
     char response[1000];
-    snprintf(response, sizeof(response), "GET_PROFILE OK|%s|%s|%s|%s|%d", username, bio, display_name, avatar_path, visibility);
+    snprintf(response, sizeof(response), "GET_PROFILE OK|%s|%s|%s|%d", username, bio, display_name, visibility);
+    printf("get profile: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -458,8 +436,9 @@ int handle_get_friends_list(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_FRIENDS_LIST OK|%d", friend_count);
     for(int i=0; i<friend_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d,%s", friends[i].user_id, friends[i].username);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", friends[i].user_id, friends[i].username);
     }
+    printf("get friends list: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -485,6 +464,7 @@ int handle_get_follow_requests(int client_fd, char* args)
     {
         offset += snprintf(response + offset, sizeof(response) - offset, "|%d", request_ids[i]);
     }
+    printf("get follow requests: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -509,33 +489,20 @@ int handle_get_user_posts(int client_fd, char* args)
 
     for(int i = 0; i < post_count; i++)
     {
-        char desc[MESSAGE_LENGTH] = "";
+        char cont[MESSAGE_LENGTH] = "";
         char uname[USERNAME_LENGTH] = "";
 
-        for(int j = 0; posts[i].description[j] && j < MESSAGE_LENGTH-1; j++)
-        {
-            desc[j] = (posts[i].description[j] == '|' || posts[i].description[j] == ',') ? '_' : posts[i].description[j];
-        }
-        desc[MESSAGE_LENGTH-1] = '\0';
+        strncpy(cont, posts[i].content, MESSAGE_LENGTH-1);
+        cont[MESSAGE_LENGTH-1] = '\0';
 
-        for(int j = 0; posts[i].username[j] && j < USERNAME_LENGTH-1; j++)
-        {
-            uname[j] = (posts[i].username[j] == '|' || posts[i].username[j] == ',') ? '_' : posts[i].username[j];
-        }
+        strncpy(uname, posts[i].username, USERNAME_LENGTH-1);
         uname[USERNAME_LENGTH-1] = '\0';
 
-        offset += snprintf(response + offset, sizeof(response) - offset,
-                           "|%d,%d,%s,%d,%s,%s,%d",
-                           posts[i].post_id,
-                           posts[i].user_id,
-                           desc,
-                           posts[i].visibility,
-                           posts[i].image_path,
-                           uname,
-                           posts[i].like_count);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%d^%s^%d", posts[i].post_id,posts[i].user_id, cont, posts[i].visibility, uname, posts[i].like_count);
 
         if(offset >= MESSAGE_LENGTH - 100) break;
     }
+    printf("get user posts: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -558,8 +525,9 @@ int handle_get_feed(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_FEED OK|%d", post_count);
     for(int i=0; i<post_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d,%d,%s,%d,%s,%s,%d", posts[i].post_id, posts[i].user_id, posts[i].description, posts[i].visibility, posts[i].image_path, posts[i].username, posts[i].like_count);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%d^%s^%d", posts[i].post_id, posts[i].user_id, posts[i].content, posts[i].visibility, posts[i].username, posts[i].like_count);
     }
+    printf("get feed: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -585,6 +553,7 @@ int handle_get_post_likes(int client_fd, char* args)
     {
         offset += snprintf(response + offset, sizeof(response) - offset, "|%d", user_ids[i]);
     }
+    printf("get post likes: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -609,8 +578,9 @@ int handle_get_post_comments(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_POST_COMMENTS OK|%d", comment_count);
     for(int i=0; i<comment_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d,%s", user_ids[i], comments[i]);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", user_ids[i], comments[i]);
     }
+    printf("get post comments: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -631,6 +601,7 @@ int handle_get_username_by_id(int client_fd, char* args)
 
     char response[MESSAGE_LENGTH];
     snprintf(response, sizeof(response), "GET_USERNAME_BY_ID OK|%s", username);
+    printf("get username by id: %s\n", response);
     send_message(client_fd, response);
     return 0;
 }
@@ -698,10 +669,6 @@ int handle_commands(int client_fd)
     {
         return handle_update_password(client_fd, args);
     }
-    else if (strcmp(command, "UPDATE_PICTURE") == 0)
-    {
-        return handle_update_avatar_path(client_fd, args);
-    }
     else if (strcmp(command, "UPDATE_VISIBILITY") == 0)
     {
         return handle_update_visibility(client_fd, args);
@@ -726,9 +693,9 @@ int handle_commands(int client_fd)
     {
         return handle_create_post(client_fd, args);
     }
-    else if (strcmp(command, "EDIT_POST_DESCRIPTION") == 0)
+    else if (strcmp(command, "EDIT_POST_content") == 0)
     {
-        return handle_edit_post_description(client_fd, args);
+        return handle_edit_post_content(client_fd, args);
     }
     else if (strcmp(command, "EDIT_POST_VISIBILITY") == 0)
     {

@@ -4,7 +4,6 @@
 #define PASSWORD_LENGTH 100
 #define MESSAGE_LENGTH 1000
 #define BIO_LENGTH 1000
-#define PATH_LENGTH 100
 #define VISIBILITY_LENGTH 10
 #define MAX_POSTS 100
 #define MAX_FRIENDS 100
@@ -48,9 +47,8 @@ typedef struct {
 typedef struct {
     int post_id;
     int user_id;
-    char description[MESSAGE_LENGTH];
+    char content[MESSAGE_LENGTH];
     int visibility;
-    char image_path[PATH_LENGTH];
     char username[USERNAME_LENGTH];
     
     int like_count;

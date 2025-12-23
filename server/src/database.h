@@ -11,7 +11,6 @@
 #define PASSWORD_LENGTH 100
 #define MESSAGE_LENGTH 1000
 #define BIO_LENGTH 1000
-#define PATH_LENGTH 100
 #define VISIBILITY_LENGTH 10
 #define MAX_POSTS 100
 #define MAX_FRIENDS 100
@@ -29,7 +28,6 @@ int db_check_login(const char* username, const char* password_hash, int* user_id
 
 int db_update_profile_bio(int user_id, const char* bio);
 int db_update_profile_display_name(int user_id, const char* display_name);
-int db_update_profile_avatar_path(int user_id, const char* avatar_path);
 int db_update_profile_visibility(int user_id, int visibility);
 int db_update_password(int user_id, const char* old_password_hash, const char* new_password_hash);
 int db_is_online(int user_id, int is_online);
@@ -40,8 +38,8 @@ int db_accept_follow_request(int user_id, const char* username_to_accept);
 int db_reject_follow_request(int user_id, const char* username_to_reject);
 int db_unfollow_user(int user_id, const char* username_to_unfollow);
 
-int db_create_post(int user_id, const char* description, const char* image_path, int visibility, int* post_id);
-int db_edit_post_description(int user_id, int post_id, const char* new_description);
+int db_create_post(int user_id, const char* content, int visibility, int* post_id);
+int db_edit_post_content(int user_id, int post_id, const char* new_content);
 int db_edit_post_visibility(int user_id, int post_id, int new_visibility);
 int db_delete_post(int user_id, int post_id);
 int db_like_post(int user_id, int post_id);
@@ -68,9 +66,8 @@ typedef struct {
 typedef struct {
     int post_id;
     int user_id;
-    char description[MESSAGE_LENGTH];
+    char content[MESSAGE_LENGTH];
     int visibility;
-    char image_path[PATH_LENGTH];
     char username[USERNAME_LENGTH];
     
     int like_count;
@@ -81,7 +78,7 @@ typedef struct {
     char comments[MAX_COMMENTS][COMMENT_LENGTH];
 } Post;
 
-int db_get_profile(int user_id, char* username, char* bio, char* display_name, char* avatar_path, int* visibility);
+int db_get_profile(int user_id, char* username, char* bio, char* display_name, int* visibility);
 
 int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* friend_count);
 
