@@ -22,26 +22,24 @@ enum STATE
 };
 
 typedef struct {
-    int post_id;
-    int user_ids[MAX_LIKES];
-    int like_count;
-} Likes;
+    int user_id;
+    char display_name[USERNAME_LENGTH];
+} Like;
 
 typedef struct {
-    int post_id;
-    int user_ids[MAX_COMMENTS];
-    char comments[MAX_COMMENTS][COMMENT_LENGTH];
-    int comment_count;
-} Comments;
+    int user_id;
+    char display_name[USERNAME_LENGTH];
+    char comment[COMMENT_LENGTH];
+} Comment;
 
 typedef struct{
     int request_id;
-    char username[USERNAME_LENGTH];
+    char display_name[USERNAME_LENGTH];
 } Request;
 
 typedef struct {
     int user_id;
-    char username[USERNAME_LENGTH];
+    char display_name[USERNAME_LENGTH];
 } Friend;
 
 typedef struct {
@@ -49,12 +47,11 @@ typedef struct {
     int user_id;
     char content[MESSAGE_LENGTH];
     int visibility;
-    char username[USERNAME_LENGTH];
-    
-    int like_count;
-    int likes[MAX_LIKES];
+    char display_name[USERNAME_LENGTH];
 
+    Like likes[MAX_LIKES];
+    int like_count;
+
+    Comment comments[MAX_COMMENTS];
     int comment_count;
-    int comment_user_ids[MAX_COMMENTS];
-    char comments[MAX_COMMENTS][COMMENT_LENGTH];
 } Post;

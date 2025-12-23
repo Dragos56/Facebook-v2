@@ -32,6 +32,6 @@ void get_friends_list(int user_id, Friend* friends, int* friend_count, char* res
 void get_follow_requests(int user_id, Request* requests, int* request_count, char* response);
 void get_user_posts(int user_id, Post* posts, int* post_count, char* response);
 void get_feed(int user_id, Post* posts, int* post_count, char* response);
-void get_post_likes(int post_id, int* user_ids, int* like_count, char* response);
-void get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGTH], int* comment_count, char* response);   
+void get_post_likes(int post_id, Like* likes, int* like_count, char* response);
+void get_post_comments(int post_id, Comment* comments, int* comment_count, char* response);   
 void get_username_by_id(int user_id, char* username, char* response);

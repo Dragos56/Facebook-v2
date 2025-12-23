@@ -46,21 +46,24 @@ int db_like_post(int user_id, int post_id);
 int db_comment_post(int user_id, int post_id, const char* comment);
 
 typedef struct {
-    int post_id;
-    int user_ids[MAX_LIKES];
-    int like_count;
-} Likes;
-
-typedef struct {
-    int post_id;
-    int user_ids[MAX_COMMENTS];
-    char comments[MAX_COMMENTS][COMMENT_LENGTH];
-    int comment_count;
-} Comments;
+    int user_id;
+    char display_name[USERNAME_LENGTH];
+} Like;
 
 typedef struct {
     int user_id;
-    char username[USERNAME_LENGTH];
+    char display_name[USERNAME_LENGTH];
+    char comment[COMMENT_LENGTH];
+} Comment;
+
+typedef struct{
+    int request_id;
+    char display_name[USERNAME_LENGTH];
+} Request;
+
+typedef struct {
+    int user_id;
+    char display_name[USERNAME_LENGTH];
 } Friend;
 
 typedef struct {
@@ -68,26 +71,25 @@ typedef struct {
     int user_id;
     char content[MESSAGE_LENGTH];
     int visibility;
-    char username[USERNAME_LENGTH];
-    
-    int like_count;
-    int likes[MAX_LIKES];
+    char display_name[USERNAME_LENGTH];
 
+    Like likes[MAX_LIKES];
+    int like_count;
+
+    Comment comments[MAX_COMMENTS];
     int comment_count;
-    int comment_user_ids[MAX_COMMENTS];
-    char comments[MAX_COMMENTS][COMMENT_LENGTH];
 } Post;
 
 int db_get_profile(int user_id, char* username, char* bio, char* display_name, int* visibility);
 
 int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* friend_count);
 
-int db_get_follow_requests(int user_id, int* request_ids, int max_requests, int* request_count);
+int db_get_follow_requests(int user_id, Request* requests, int max_requests, int* request_count);
 
 int db_get_user_posts(int user_id, Post* posts, int max_posts, int* post_count);
 int db_get_feed(int user_id, Post* posts, int max_posts, int* post_count);
-int db_get_post_likes(int post_id, int* user_ids, int max_likes, int* like_count);
-int db_get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGTH], int max_comments, int* comment_count);
+int db_get_post_likes(int post_id, Like* likes, int max_likes, int* like_count);
+int db_get_post_comments(int post_id, Comment* comments, int max_comments, int* comment_count);
 
 int db_get_username_by_id(int user_id, char* username);
 

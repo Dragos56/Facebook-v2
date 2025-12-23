@@ -436,35 +436,37 @@ void get_profile(int user_id, char* username, char* bio, char* display_name, int
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0) 
+    if (n <= 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
+
+    buffer[n] = '\0';
+
+    if(strncmp(buffer, "GET_PROFILE ERROR", 17) == 0)
     {
-        buffer[n] = '\0';
+        strcpy(response, "Eroare la primire.");
+        return;
+    }
 
-        if(strncmp(buffer, "GET_PROFILE ERROR", 17) == 0)
-        {
-            strcpy(response, "Eroare la primire.");
-            return;
-        }
+    char* token = strtok(buffer, "|");
+    token = strtok(NULL, "|");
+    strncpy(username, token, USERNAME_LENGTH - 1);
+    username[USERNAME_LENGTH - 1] = '\0';
 
-        char* token = strtok(buffer, "|");
-        token = strtok(NULL, "|");
-        strncpy(username, token, USERNAME_LENGTH - 1);
-        username[USERNAME_LENGTH - 1] = '\0';
+    token = strtok(NULL, "|");
+    strncpy(bio, token, BIO_LENGTH - 1);
+    bio[BIO_LENGTH - 1] = '\0';
 
-        token = strtok(NULL, "|");
-        strncpy(bio, token, BIO_LENGTH - 1);
-        bio[BIO_LENGTH - 1] = '\0';
+    token = strtok(NULL, "|");
+    strncpy(display_name, token, USERNAME_LENGTH - 1);
+    display_name[USERNAME_LENGTH - 1] = '\0';
 
-        token = strtok(NULL, "|");
-        strncpy(display_name, token, USERNAME_LENGTH - 1);
-        display_name[USERNAME_LENGTH - 1] = '\0';
+    token = strtok(NULL, "|");
+    *visibility = atoi(token);
 
-        token = strtok(NULL, "|");
-        *visibility = atoi(token);
-
-        strcpy(response, "Profilul a fost preluat cu succes.");
-    } 
-    else strcpy(response, "Eroare la primire.");
+    strcpy(response, "Profilul a fost preluat cu succes.");
 }
 
 void get_friends_list(int user_id, Friend* friends, int* friend_count, char* response)
@@ -475,35 +477,40 @@ void get_friends_list(int user_id, Friend* friends, int* friend_count, char* res
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0)
+    if (n <= 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
+
+    buffer[n] = '\0';
+
+    if(strncmp(buffer, "GET_FRIENDS_LIST ERROR", 21) == 0)
     {
-        buffer[n] = '\0';
+        strcpy(response, "Eroare la primire.");
+        return;
+    }
 
-        if(strncmp(buffer, "GET_FRIENDS_LIST ERROR", 21) == 0)
-        {
-            strcpy(response, "Eroare la primire.");
-            return;
-        }
+    char* token = strtok(buffer, "|");  
+    token = strtok(NULL, "|");          
+    *friend_count = atoi(token);
 
-        char* token = strtok(buffer, "|"); // GET_FRIENDS_LIST OK
-        token = strtok(NULL, "|");         // friend count
-        *friend_count = atoi(token);
+    for (int i = 0; i < *friend_count && i < MAX_FRIENDS; i++) 
+    {
+        token = strtok(NULL, "|");  
+        if (!token) break; 
 
-        for (int i = 0; i < *friend_count && i < MAX_FRIENDS; i++) {
-            token = strtok(NULL, "|");
-            if (!token) break;
+        int friend_id;
+        char display_name[USERNAME_LENGTH];
+        int ret = sscanf(token, "%d^%49[^^]", &friend_id, display_name);
+        if (ret != 2) { printf("Parsing failed for token: %s\n", token); continue; }
 
-            char* field = strtok(token, "^");
-            friends[i].user_id = atoi(field);
+        friends[i].user_id = friend_id;
+        strncpy(friends[i].display_name, display_name, USERNAME_LENGTH - 1);
+        friends[i].display_name[USERNAME_LENGTH - 1] = '\0';
+    }
 
-            field = strtok(NULL, "^");
-            strncpy(friends[i].username, field, USERNAME_LENGTH - 1);
-            friends[i].username[USERNAME_LENGTH - 1] = '\0';
-        }
-
-        strcpy(response, "Lista de prieteni a fost preluata cu succes.");   
-    } 
-    else strcpy(response, "Eroare la primire.");
+    strcpy(response, "Lista de prieteni a fost preluata cu succes.");   
 }
 
 void get_follow_requests(int user_id, Request* requests, int* request_count, char* response)
@@ -514,30 +521,36 @@ void get_follow_requests(int user_id, Request* requests, int* request_count, cha
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n > 0)
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
+
+    buffer[n] = '\0';
+
+    if(strncmp(buffer, "GET_FOLLOW_REQUESTS ERROR", 25) == 0)
     {
-        buffer[n] = '\0';
+        strcpy(response, "Eroare la primire.");
+        return;
+    }
 
-        if(strncmp(buffer, "GET_FOLLOW_REQUESTS ERROR", 25) == 0)
-        {
-            strcpy(response, "Eroare la primire.");
-            return;
-        }
+    char* token = strtok(buffer, "|");  
+    token = strtok(NULL, "|");          
+    *request_count = atoi(token);
 
-        char* token = strtok(buffer, "|");
-        token = strtok(NULL, "|");         
-        *request_count = atoi(token);
+    for (int i = 0; i < *request_count && i < MAX_FRIENDS; i++) 
+    {
+        token = strtok(NULL, "|");  
+        if (!token) break; 
 
-        for (int i = 0; i < *request_count && i < MAX_FRIENDS; i++) 
-        {
-            token = strtok(NULL, "|");
-            if (!token) break;
-            requests[i].request_id = atoi(token);
-        }
+        int request_id;
+        char display_name[USERNAME_LENGTH];
+        int ret = sscanf(token, "%d^%49[^^]", &request_id, display_name);
+        if (ret != 2) { printf("Parsing failed for token: %s\n", token); continue; }
 
-        strcpy(response, "Cererile de urmarire au fost preluate cu succes.");
-    } 
-    else strcpy(response, "Eroare la primire.");
+        requests[i].request_id = request_id;
+        strncpy(requests[i].display_name, display_name, USERNAME_LENGTH - 1);
+        requests[i].display_name[USERNAME_LENGTH - 1] = '\0';
+    }
+
+    strcpy(response, "Cererile de urmarire au fost preluate cu succes.");
 }
 
 void get_user_posts(int user_id, Post* posts, int* post_count, char* response)
@@ -552,36 +565,39 @@ void get_user_posts(int user_id, Post* posts, int* post_count, char* response)
 
     buffer[n] = '\0';
 
-    if (strncmp(buffer, "GET_USER_POSTS ERROR", 20) == 0) { strcpy(response, "Eroare la primire."); return; }
+    if (strncmp(buffer, "GET_USER_POSTS ERROR", 20) == 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
 
-    char* token = strtok(buffer, "|"); // "GET_USER_POSTS OK"
-    token = strtok(NULL, "|");         // number of posts
+    char* token = strtok(buffer, "|");
+    token = strtok(NULL, "|");        
     if (!token) { strcpy(response, "Răspuns invalid de la server."); return; }
 
     *post_count = atoi(token);
 
     for (int i = 0; i < *post_count && i < MAX_POSTS; i++) 
     {
-        token = strtok(NULL, "|"); // fiecare post ca string
+        token = strtok(NULL, "|");
         if (!token) break;
 
-        int post_id, user_id, visibility, like_count;
+        int post_id, user_id, visibility, like_count, comment_count;
         char content[MESSAGE_LENGTH];
-        char username[USERNAME_LENGTH];
+        char display_name[USERNAME_LENGTH];
 
-        int ret = sscanf(token, "%d^%d^%199[^^]^%d^%49[^^]^%d",
-                        &post_id, &user_id, content, &visibility, username, &like_count);
-        if (ret != 6) { printf("Parsing failed for token: %s\n", token); continue; }
+        int ret = sscanf(token, "%d^%d^%199[^^]^%d^%49[^^]^%d^%d", &post_id, &user_id, content, &visibility, display_name, &like_count, &comment_count);
+        if (ret != 7) { printf("Parsing failed for token: %s\n", token); continue; }
 
         posts[i].post_id = post_id;
         posts[i].user_id = user_id;
         strncpy(posts[i].content, content, MESSAGE_LENGTH-1);
         posts[i].content[MESSAGE_LENGTH-1] = '\0';
         posts[i].visibility = visibility;
-        strncpy(posts[i].username, username, USERNAME_LENGTH-1);
-        posts[i].username[USERNAME_LENGTH-1] = '\0';
+        strncpy(posts[i].display_name, display_name, USERNAME_LENGTH-1);
+        posts[i].display_name[USERNAME_LENGTH-1] = '\0';
         posts[i].like_count = like_count;
-        posts[i].comment_count = 0;
+        posts[i].comment_count = comment_count;
     }
 
     strcpy(response, "Postările au fost preluate cu succes.");
@@ -599,10 +615,14 @@ void get_feed(int user_id, Post* posts, int* post_count, char* response)
 
     buffer[n] = '\0';
 
-    if(strncmp(buffer, "GET_FEED ERROR", 14) == 0) { strcpy(response, "Eroare la primire."); return; }
+    if(strncmp(buffer, "GET_FEED ERROR", 14) == 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
 
-    char* token = strtok(buffer, "|"); // GET_FEED OK
-    token = strtok(NULL, "|");         // post count
+    char* token = strtok(buffer, "|");
+    token = strtok(NULL, "|");         
     *post_count = atoi(token);
 
     for (int i = 0; i < *post_count && i < MAX_POSTS; i++) 
@@ -610,29 +630,28 @@ void get_feed(int user_id, Post* posts, int* post_count, char* response)
         token = strtok(NULL, "|");
         if (!token) break;
 
-        int post_id, user_id, visibility, like_count;
+        int post_id, user_id, visibility, like_count, comment_count;
         char content[MESSAGE_LENGTH];
-        char username[USERNAME_LENGTH];
+        char display_name[USERNAME_LENGTH];
 
-        int ret = sscanf(token, "%d^%d^%199[^^]^%d^%49[^^]^%d",
-                        &post_id, &user_id, content, &visibility, username, &like_count);
-        if (ret != 6) { printf("Parsing failed for token: %s\n", token); continue; }
+        int ret = sscanf(token, "%d^%d^%199[^^]^%d^%49[^^]^%d^%d", &post_id, &user_id, content, &visibility, display_name, &like_count, &comment_count);
+        if (ret != 7) { printf("Parsing failed for token: %s\n", token); continue; }
 
         posts[i].post_id = post_id;
         posts[i].user_id = user_id;
         strncpy(posts[i].content, content, MESSAGE_LENGTH-1);
         posts[i].content[MESSAGE_LENGTH-1] = '\0';
         posts[i].visibility = visibility;
-        strncpy(posts[i].username, username, USERNAME_LENGTH-1);
-        posts[i].username[USERNAME_LENGTH-1] = '\0';
+        strncpy(posts[i].display_name, display_name, USERNAME_LENGTH-1);
+        posts[i].display_name[USERNAME_LENGTH-1] = '\0';
         posts[i].like_count = like_count;
-        posts[i].comment_count = 0;
+        posts[i].comment_count = comment_count;
     }
 
     strcpy(response, "Feed-ul a fost preluat cu succes.");
 }
 
-void get_post_likes(int post_id, int* user_ids, int* like_count, char* response)
+void get_post_likes(int post_id, Like* likes, int* like_count, char* response)
 {
     char command[MESSAGE_LENGTH];
     snprintf(command, sizeof(command), "GET_POST_LIKES|%d", post_id);
@@ -643,7 +662,11 @@ void get_post_likes(int post_id, int* user_ids, int* like_count, char* response)
     if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
 
     buffer[n] = '\0';
-    if(strncmp(buffer, "GET_POST_LIKES ERROR", 20) == 0) { strcpy(response, "Eroare la primire."); return; }
+    if(strncmp(buffer, "GET_POST_LIKES ERROR", 20) == 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
 
     char* token = strtok(buffer, "|");
     token = strtok(NULL, "|");
@@ -652,7 +675,19 @@ void get_post_likes(int post_id, int* user_ids, int* like_count, char* response)
     for (int i = 0; i < *like_count; i++) 
     {
         token = strtok(NULL, "|");
-        user_ids[i] = atoi(token);
+        if(!token) break;
+
+        int user_id;
+        char display_name[USERNAME_LENGTH];
+
+        int ret = sscanf(token, "%d^%49[^^]", &user_id, display_name);
+        if (ret != 2) { printf("Parsing failed for token: %s\n", token); continue; }
+
+        likes[i].user_id = user_id;
+        strncpy(likes[i].display_name, display_name, USERNAME_LENGTH - 1);
+        likes[i].display_name[USERNAME_LENGTH - 1] = '\0';
+
+
     }
 
     strcpy(response, "Like-urile postarii au fost preluate cu succes.");
@@ -669,7 +704,11 @@ void get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGT
     if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
 
     buffer[n] = '\0';
-    if(strncmp(buffer, "GET_POST_COMMENTS ERROR", 23) == 0) { strcpy(response, "Eroare la primire."); return; }
+    if(strncmp(buffer, "GET_POST_COMMENTS ERROR", 23) == 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
 
     char* token = strtok(buffer, "|");
     token = strtok(NULL, "|");
@@ -680,11 +719,13 @@ void get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGT
         token = strtok(NULL, "|");
         if (!token) break;
 
-        char* field = strtok(token, "^");
-        user_ids[i] = atoi(field);
-
-        field = strtok(NULL, "^");
-        strncpy(comments[i], field, COMMENT_LENGTH - 1);
+        int user_id;
+        char display_name[USERNAME_LENGTH];
+        char comment[COMMENT_LENGTH];
+        int ret = sscanf(token, "%d^%49[^^]^%199[^^]", &user_id, display_name, comment);
+        if (ret != 3) { printf("Parsing failed for token: %s\n", token); continue; }
+        user_ids[i] = user_id;
+        strncpy(comments[i], comment, COMMENT_LENGTH - 1);
         comments[i][COMMENT_LENGTH - 1] = '\0';
     }
 
@@ -702,7 +743,11 @@ void get_username_by_id(int user_id, char* username, char* response)
     if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
 
     buffer[n] = '\0';
-    if(strncmp(buffer, "GET_USERNAME_BY_ID ERROR", 23) == 0) { strcpy(response, "Eroare la primire."); return; }
+    if(strncmp(buffer, "GET_USERNAME_BY_ID ERROR", 23) == 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
 
     char* token = strtok(buffer, "|");
     token = strtok(NULL, "|");

@@ -436,7 +436,7 @@ int handle_get_friends_list(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_FRIENDS_LIST OK|%d", friend_count);
     for(int i=0; i<friend_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", friends[i].user_id, friends[i].username);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", friends[i].user_id, friends[i].display_name);
     }
     printf("get friends list: %s\n", response);
     send_message(client_fd, response);
@@ -445,13 +445,13 @@ int handle_get_friends_list(int client_fd, char* args)
 
 int handle_get_follow_requests(int client_fd, char* args)
 {
-    char *p=strtok(args, "|");
+    char *p = strtok(args, "|");
     int user_id = atoi(p);
 
-    int request_ids[MAX_FOLLOW_REQUESTS];
+    Request requests[MAX_FOLLOW_REQUESTS];
     int request_count = 0;
 
-    if(db_get_follow_requests(user_id, request_ids, MAX_FOLLOW_REQUESTS, &request_count)==-1)
+    if(db_get_follow_requests(user_id, requests, MAX_FOLLOW_REQUESTS, &request_count) == -1)
     {
         const char* response = "GET_FOLLOW_REQUESTS ERROR|Database error";
         send_message(client_fd, response);
@@ -460,10 +460,12 @@ int handle_get_follow_requests(int client_fd, char* args)
 
     char response[MESSAGE_LENGTH];
     int offset = snprintf(response, sizeof(response), "GET_FOLLOW_REQUESTS OK|%d", request_count);
-    for(int i=0; i<request_count; i++)
+
+    for(int i = 0; i < request_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d", request_ids[i]);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", requests[i].request_id, requests[i].display_name);
     }
+
     printf("get follow requests: %s\n", response);
     send_message(client_fd, response);
     return 0;
@@ -495,10 +497,10 @@ int handle_get_user_posts(int client_fd, char* args)
         strncpy(cont, posts[i].content, MESSAGE_LENGTH-1);
         cont[MESSAGE_LENGTH-1] = '\0';
 
-        strncpy(uname, posts[i].username, USERNAME_LENGTH-1);
+        strncpy(uname, posts[i].display_name, USERNAME_LENGTH-1);
         uname[USERNAME_LENGTH-1] = '\0';
 
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%d^%s^%d", posts[i].post_id,posts[i].user_id, cont, posts[i].visibility, uname, posts[i].like_count);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%d^%s^%d^%d", posts[i].post_id, posts[i].user_id, cont, posts[i].visibility, uname, posts[i].like_count, posts[i].comment_count);
 
         if(offset >= MESSAGE_LENGTH - 100) break;
     }
@@ -525,7 +527,16 @@ int handle_get_feed(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_FEED OK|%d", post_count);
     for(int i=0; i<post_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%d^%s^%d", posts[i].post_id, posts[i].user_id, posts[i].content, posts[i].visibility, posts[i].username, posts[i].like_count);
+        char cont[MESSAGE_LENGTH] = "";
+        char uname[USERNAME_LENGTH] = "";
+
+        strncpy(cont, posts[i].content, MESSAGE_LENGTH-1);
+        cont[MESSAGE_LENGTH-1] = '\0';
+
+        strncpy(uname, posts[i].display_name, USERNAME_LENGTH-1);
+        uname[USERNAME_LENGTH-1] = '\0';
+        
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%d^%s^%d^%d", posts[i].post_id, posts[i].user_id, cont, posts[i].visibility, uname, posts[i].like_count, posts[i].comment_count);
     }
     printf("get feed: %s\n", response);
     send_message(client_fd, response);
@@ -537,10 +548,10 @@ int handle_get_post_likes(int client_fd, char* args)
     char *p=strtok(args, "|");
     int post_id = atoi(p);
 
-    int user_ids[MAX_LIKES];
+    Like likes[MAX_LIKES];
     int like_count = 0;
 
-    if(db_get_post_likes(post_id, user_ids, MAX_LIKES, &like_count)==-1)
+    if(db_get_post_likes(post_id, likes, MAX_LIKES, &like_count)==-1)
     {
         const char* response = "GET_POST_LIKES ERROR|Database error";
         send_message(client_fd, response);
@@ -551,7 +562,7 @@ int handle_get_post_likes(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_POST_LIKES OK|%d", like_count);
     for(int i=0; i<like_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d", user_ids[i]);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", likes[i].user_id, likes[i].display_name);
     }
     printf("get post likes: %s\n", response);
     send_message(client_fd, response);
@@ -563,11 +574,10 @@ int handle_get_post_comments(int client_fd, char* args)
     char *p=strtok(args, "|");
     int post_id = atoi(p);
 
-    int user_ids[MAX_COMMENTS];
-    char comments[MAX_COMMENTS][COMMENT_LENGTH];
+    Comment comments[MAX_COMMENTS];
     int comment_count = 0;
 
-    if(db_get_post_comments(post_id, user_ids, comments, MAX_COMMENTS, &comment_count)==-1)
+    if(db_get_post_comments(post_id, comments, MAX_COMMENTS, &comment_count)==-1)
     {
         const char* response = "GET_POST_COMMENTS ERROR|Database error";
         send_message(client_fd, response);
@@ -578,7 +588,7 @@ int handle_get_post_comments(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_POST_COMMENTS OK|%d", comment_count);
     for(int i=0; i<comment_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", user_ids[i], comments[i]);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s^%s", comments[i].user_id, comments[i].display_name, comments[i].comment);
     }
     printf("get post comments: %s\n", response);
     send_message(client_fd, response);

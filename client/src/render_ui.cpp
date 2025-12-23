@@ -280,7 +280,7 @@ static void render_right_panel(float w, float h)
         }
         for(int i = 0; i < friend_count; i++)
         {
-            ImGui::Text("%s", friends[i].username);
+            ImGui::Text("%s", friends[i].display_name);
             ImGui::Separator();
         }
     }
@@ -309,20 +309,10 @@ static void render_main_panel(float w, float h)
             }
             for(int i = 0; i < feed_count; i++)
             {
-                ImGui::Text("Post by %s:", feed[i].username);
+                ImGui::Text("Post by %s:", feed[i].display_name);
                 ImGui::Text("%s", feed[i].content);
 
-                ImGui::Text("Likes: %d", feed[i].like_count);
-                ImGui::SameLine();
-                ImGui::Text("Comments: %d", feed[i].comment_count);
-
-                if(ImGui::Button("Like"))
-                {
-                    like_post(user_id, feed[i].post_id, response);
-                    feed[i].like_count++;
-                }
-                ImGui::SameLine();
-                ImGui::Button("Comment");
+                ImGui::Text("Likes: %d  Comments: %d", feed[i].like_count, feed[i].comment_count);
 
                 ImGui::Separator();
             }
@@ -330,10 +320,16 @@ static void render_main_panel(float w, float h)
         case LOGGED_IN:
             ImGui::Text("Home Feed");
             ImGui::Separator();
-            get_feed(user_id, feed, &feed_count, response);
+            if(!feed_loaded)
+            {
+                get_feed(user_id, feed, &feed_count, response);
+                feed_loaded = true;
+            }
+            static bool add_comment[MAX_POSTS] = { false };
+            static char comment_buffer[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
             for(int i = 0; i < feed_count; i++)
             {
-                ImGui::Text("Post by %s:", feed[i].username);
+                ImGui::Text("Post by %s:", feed[i].display_name);
                 ImGui::Text("%s", feed[i].content);
                 ImGui::Text("Likes: %d  Comments: %d", feed[i].like_count, feed[i].comment_count);
                 if (ImGui::Button(("Like##"+std::to_string(i)).c_str()))
@@ -342,22 +338,24 @@ static void render_main_panel(float w, float h)
                     feed[i].like_count++;
                 }
                 ImGui::SameLine();
-                static bool add_comment = false;
-                if(add_comment)
+                if(add_comment[i])
                 {
-                    static char comment_buffer[COMMENT_LENGTH] = "";
-                    ImGui::InputText("Comment", comment_buffer, COMMENT_LENGTH);
+
+                    ImGui::InputText("Comment", comment_buffer[i], COMMENT_LENGTH);
                     ImGui::SameLine();
                     if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
                     {
-                        comment_post(user_id, feed[i].post_id, comment_buffer, response);
-                        get_user_posts(user_id, feed, &feed_count, response);
-                        add_comment = false;
+                        if(strcmp(comment_buffer[i], "") != 0)
+                        {
+                            comment_post(user_id, feed[i].post_id, comment_buffer[i], response);
+                            get_user_posts(user_id, feed, &feed_count, response);
+                        }
+                        add_comment[i] = false;
                     }
                 }
                 else
                 {
-                    if (ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment = true;
+                    if (ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment[i] = true;
                 }
                 ImGui::Separator();
             }
@@ -374,23 +372,24 @@ static void render_main_panel(float w, float h)
             }
             ImGui::Separator();
             ImGui::Text("Follow Requests:");
-            get_follow_requests(user_id, follow_requests, &follow_request_count, response);
+            if(!follow_request_loaded)
+            {
+                get_follow_requests(user_id, follow_requests, &follow_request_count, response);
+                follow_request_loaded = true;
+            }
             for(int i = 0; i < follow_request_count; i++)
             {
-                ImGui::Text("%s", follow_requests[i].username);
+                ImGui::Text("%s", follow_requests[i].display_name);
                 ImGui::SameLine();
                 if (ImGui::Button(("Accept##"+std::to_string(i)).c_str()))
                 {   
-                    static char username_to_accept[USERNAME_LENGTH] = "";
-                    get_username_by_id(follow_requests[i].request_id, username_to_accept, response);
-                    accept_follow_request(user_id, username_to_accept, response);
+                    accept_follow_request(user_id, follow_requests[i].display_name, response);
+                    follow_request_loaded = false;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button(("Reject##"+std::to_string(i)).c_str()))
                 {
-                    static char username_to_reject[USERNAME_LENGTH] = "";
-                    get_username_by_id(follow_requests[i].request_id, username_to_reject, response);
-                    reject_follow_request(user_id, username_to_reject, response);
+                    reject_follow_request(user_id, follow_requests[i].display_name, response);
                 }
             }
             ImGui::Separator();
@@ -421,6 +420,7 @@ static void render_main_panel(float w, float h)
             ImGui::Separator();
 
             static bool edit_mode = false;
+            static bool add_comment_profile_post[MAX_POSTS] = { false };
             static char username[USERNAME_LENGTH] = "";
             static char display_name[USERNAME_LENGTH] = "";
             static char bio[BIO_LENGTH] = "";
@@ -443,7 +443,6 @@ static void render_main_panel(float w, float h)
             {
                 ImGui::InputText("Display Name", display_name, USERNAME_LENGTH);
                 ImGui::InputTextMultiline("Bio", bio, BIO_LENGTH);
-                static int profile_visibility = 0;
 
                 ImGui::Text("Visibility:");
                 ImGui::SameLine();
@@ -468,6 +467,7 @@ static void render_main_panel(float w, float h)
             }
             ImGui::Separator();
             ImGui::Text("Your Posts:");
+            static char comment_buffer_profile[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
             for(int i = 0; i < user_post_count; i++)
             {
                 ImGui::Text("%s", user_posts[i].content);
@@ -481,22 +481,23 @@ static void render_main_panel(float w, float h)
 
                 ImGui::SameLine();
 
-                static bool add_comment_profile_post = false;
-                if(add_comment_profile_post)
+                if(add_comment_profile_post[i])
                 {
-                    static char comment_buffer[COMMENT_LENGTH] = "";
-                    ImGui::InputText("Comment", comment_buffer, COMMENT_LENGTH);
+                    ImGui::InputText("Comment", comment_buffer_profile[i], COMMENT_LENGTH);
                     ImGui::SameLine();
                     if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
                     {
-                        comment_post(user_id, user_posts[i].post_id, comment_buffer, response);
-                        get_user_posts(user_id, user_posts, &user_post_count, response);
-                        add_comment_profile_post = false;
+                        if(strcmp(comment_buffer_profile[i], "") != 0)
+                        {
+                            comment_post(user_id, user_posts[i].post_id, comment_buffer_profile[i], response);
+                            get_user_posts(user_id, user_posts, &user_post_count, response);
+                        }
+                        add_comment_profile_post[i] = false;
                     }
                 }
                 else
                 {
-                    if(ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment_profile_post = true;
+                    if(ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment_profile_post[i] = true;
                 }
                 ImGui::Separator();
             }
