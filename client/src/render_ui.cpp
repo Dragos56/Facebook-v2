@@ -385,6 +385,7 @@ static void render_main_panel(float w, float h)
                 {   
                     accept_follow_request(user_id, follow_requests[i].display_name, response);
                     follow_request_loaded = false;
+                    friends_loaded = false;
                 }
                 ImGui::SameLine();
                 if (ImGui::Button(("Reject##"+std::to_string(i)).c_str()))
