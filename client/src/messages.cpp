@@ -281,6 +281,48 @@ void unfollow_request(int user_id, const char* username_to_unfollow, char* respo
     printf("Received response: %s\n", response);
 }
 
+void add_close_friend(int user_id, int friend_id, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "ADD_CLOSE_FRIEND|%d|%d", user_id, friend_id);
+    printf("Sending command: %s\n", command);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void remove_close_friend(int user_id, int friend_id, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "REMOVE_CLOSE_FRIEND|%d|%d", user_id, friend_id);
+    printf("Sending command: %s\n", command);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
 void post(int user_id, const char* content, int visibility, char* response)
 {
     char command[MESSAGE_LENGTH];
@@ -326,7 +368,7 @@ void edit_post_visibility(int user_id, int visibility, int post_id, char* respon
 void edit_post_content(int user_id, int post_id, const char* content, char* response)
 {
     char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "EDIT_POST_content|%d|%d|%s", user_id, post_id, content);
+    snprintf(command, sizeof(command), "EDIT_POST_CONTENT|%d|%d|%s", user_id, post_id, content);
     printf("Sending command: %s\n", command);
     send_message(command);
     
@@ -502,12 +544,14 @@ void get_friends_list(int user_id, Friend* friends, int* friend_count, char* res
 
         int friend_id;
         char display_name[USERNAME_LENGTH];
-        int ret = sscanf(token, "%d^%49[^^]", &friend_id, display_name);
-        if (ret != 2) { printf("Parsing failed for token: %s\n", token); continue; }
+        int close_friend;
+        int ret = sscanf(token, "%d^%49[^^]^%d", &friend_id, display_name, &close_friend);
+        if (ret != 3) { printf("Parsing failed for token: %s\n", token); continue; }
 
         friends[i].user_id = friend_id;
         strncpy(friends[i].display_name, display_name, USERNAME_LENGTH - 1);
         friends[i].display_name[USERNAME_LENGTH - 1] = '\0';
+        friends[i].close_friend = close_friend;
     }
 
     strcpy(response, "Lista de prieteni a fost preluata cu succes.");   
@@ -755,4 +799,28 @@ void get_username_by_id(int user_id, char* username, char* response)
     username[USERNAME_LENGTH - 1] = '\0';
 
     strcpy(response, "Numele de utilizator a fost preluat cu succes.");
+}
+
+void search_user(const char* display_name, int* user_id, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "SEARCH_USER|%s", display_name);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
+
+    buffer[n] = '\0';
+    if(strncmp(buffer, "SEARCH_USER ERROR", 17) == 0) 
+    { 
+        strcpy(response, "Eroare la primire."); 
+        return; 
+    }
+
+    char* token = strtok(buffer, "|");
+    token = strtok(NULL, "|");
+    *user_id = atoi(token);
+
+    strcpy(response, "Utilizatorul a fost gasit cu succes.");
 }

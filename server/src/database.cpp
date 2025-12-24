@@ -3,12 +3,6 @@
 sqlite3 *db_conn = NULL;
 pthread_mutex_t db_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-Friend friends[MAX_FRIENDS];
-int friend_count;
-
-static Post feed[MAX_POSTS];
-static int feed_count = 0;
-
 int db_init(const char* filename)
 {
     int rc = sqlite3_open(filename, &db_conn);
@@ -314,6 +308,34 @@ int db_unfollow_user(int user_id, const char* username_to_unfollow)
     return rc;
 }
 
+int db_add_close_friend(int user_id, int friend_id)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 2 "
+                                 "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
+    sqlite3_bind_int(stmt, 1, friend_id);
+    sqlite3_bind_int(stmt, 2, user_id);
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return rc;
+}
+
+int db_remove_close_friend(int user_id, int friend_id)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 "
+                                 "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
+    sqlite3_bind_int(stmt, 1, friend_id);
+    sqlite3_bind_int(stmt, 2, user_id);
+    int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return rc;
+}
+
 int db_create_post(int user_id, const char* content, int visibility, int* post_id)
 {
     pthread_mutex_lock(&db_mutex);
@@ -438,16 +460,10 @@ int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* frie
     sqlite3_stmt* stmt;
 
     sqlite3_prepare_v2(db_conn,
-        "SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END, u.display_name "
-        "FROM friend_requests fr "
-        "JOIN users u ON u.id = CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END "
-        "WHERE (sender_id = ? OR receiver_id = ?) AND status = 1",
+        "SELECT fr.receiver_id, u.display_name FROM friend_requests fr JOIN users u ON u.id = fr.receiver_id WHERE fr.sender_id = ? AND (fr.status = 1 OR fr.status = 2)",
         -1, &stmt, NULL);
 
     sqlite3_bind_int(stmt, 1, user_id);
-    sqlite3_bind_int(stmt, 2, user_id);
-    sqlite3_bind_int(stmt, 3, user_id);
-    sqlite3_bind_int(stmt, 4, user_id);
 
     int count = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW && count < max_friends)
@@ -457,6 +473,8 @@ int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* frie
         const unsigned char* uname = sqlite3_column_text(stmt, 1);
         strncpy(friends[count].display_name, uname ? (const char*)uname : "Unknown", USERNAME_LENGTH-1);
         friends[count].display_name[USERNAME_LENGTH-1] = '\0';
+
+        friends[count].close_friend = sqlite3_column_int(stmt, 2); 
 
         count++;
     }
@@ -677,6 +695,26 @@ int db_get_username_by_id(int user_id, char* username)
             username[USERNAME_LENGTH-1] = '\0';
             rc = 0;
         }
+    }
+
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return rc;
+}
+
+int db_search_user(const char* display_name, int* user_id)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn, "SELECT id FROM users WHERE display_name = ?", -1, &stmt, NULL);
+    sqlite3_bind_text(stmt, 1, display_name, -1, SQLITE_STATIC);
+
+    int rc = -1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) 
+    {
+        *user_id = sqlite3_column_int(stmt, 0);
+        rc = 0;
     }
 
     sqlite3_finalize(stmt);

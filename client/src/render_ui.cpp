@@ -16,10 +16,6 @@ static Post feed[MAX_POSTS];
 static int feed_count = 0;
 static bool feed_loaded = false;
 
-static Post user_posts1[MAX_POSTS];
-static int user_post_count1 = 0;
-static bool user_posts_loaded = false;
-
 static int user_id = -1;
 static bool showLogin = false;
 static bool showRegister = false;
@@ -27,9 +23,11 @@ static char connected_username[USERNAME_LENGTH] = "";
 
 static char response[MESSAGE_LENGTH];
 
+static bool user_posts_loaded = false;
 static bool friends_loaded = false;
 static bool follow_request_loaded = false;
-
+static bool other_user_posts_loaded = false;
+static bool other_user_friends_loaded = false;
 
 void client_shutdown()
 {
@@ -242,15 +240,21 @@ static void render_left_panel(float w, float h)
             app_status = LOGGED_IN;
             feed_loaded = false;
         }
-
+        
+        if(ImGui::Button("Search", ImVec2(bw, 45))) 
+        {
+            app_status = SEARCH;
+            follow_request_loaded = false;
+        }
+    
         if(ImGui::Button("Friends", ImVec2(bw, 45))) 
         {
             app_status = FRIENDS;
             friends_loaded = false;
-            follow_request_loaded = false;
         }
 
         if(ImGui::Button("Post", ImVec2(bw, 45))) app_status = POST;
+
         if(ImGui::Button("Profile", ImVec2(bw, 45))) 
         {
             app_status = PROFILE;
@@ -272,19 +276,58 @@ static void render_right_panel(float w, float h)
 
     if(app_status == FRIENDS)
     {
-        ImGui::Text("Friends:");
         if(!friends_loaded)
         {
             get_friends_list(user_id, friends, &friend_count, response);
             friends_loaded = true;
         }
+        ImGui::Text("Close friends:");
         for(int i = 0; i < friend_count; i++)
         {
-            ImGui::Text("%s", friends[i].display_name);
-            ImGui::Separator();
+            if(friends[i].close_friend)
+            {
+                ImGui::Text("%s", friends[i].display_name);
+                ImGui::Separator();
+            }
+        }
+        ImGui::Separator();
+        ImGui::Text("Friends:");
+        for(int i = 0; i < friend_count; i++)
+        {
+            if(!friends[i].close_friend)
+            {
+                ImGui::Text("%s", friends[i].display_name);
+                ImGui::Separator();
+            }
         }
     }
 
+    if(app_status == SEARCH)
+    {
+        ImGui::Text("Follow Requests:");
+        if(!follow_request_loaded)
+        {
+            get_follow_requests(user_id, follow_requests, &follow_request_count, response);
+            follow_request_loaded = true;
+        }
+        for(int i = 0; i < follow_request_count; i++)
+        {
+            ImGui::Text("%s", follow_requests[i].display_name);
+            ImGui::NewLine();
+            if (ImGui::Button(("Accept##"+std::to_string(i)).c_str()))
+            {   
+                accept_follow_request(user_id, follow_requests[i].display_name, response);
+                follow_request_loaded = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button(("Reject##"+std::to_string(i)).c_str()))
+            {
+                reject_follow_request(user_id, follow_requests[i].display_name, response);
+                follow_request_loaded = false;
+            }
+        }
+        ImGui::Separator();
+    }
     ImGui::End();
 }
 
@@ -293,6 +336,7 @@ static void render_main_panel(float w, float h)
     float top_h = h * 0.10f;
     float left_w = w * 0.18f;
     float right_w = w * 0.18f;
+    static int other_user_id = -1;
 
     ImGui::SetNextWindowPos(ImVec2(left_w, top_h));
     ImGui::SetNextWindowSize(ImVec2(w - left_w - right_w, h - top_h));
@@ -309,6 +353,7 @@ static void render_main_panel(float w, float h)
             }
             for(int i = 0; i < feed_count; i++)
             {
+                if(feed[i].visibility == 1 || feed[i].visibility == 2) continue;
                 ImGui::Text("Post by %s:", feed[i].display_name);
                 ImGui::Text("%s", feed[i].content);
 
@@ -329,18 +374,42 @@ static void render_main_panel(float w, float h)
             static char comment_buffer[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
             for(int i = 0; i < feed_count; i++)
             {
+                if(feed[i].visibility == 1) 
+                {
+                    bool is_friend = false;
+                    for(int j = 0; j < friend_count; j++)
+                    {
+                        if(feed[i].user_id == friends[j].user_id)
+                        {
+                            is_friend = true;
+                            break;
+                        }
+                    }
+                    if(!is_friend) continue;
+                }
+                else if(feed[i].visibility == 2)
+                {
+                    bool is_close_friend = false;
+                    for(int j = 0; j < friend_count; j++)
+                    {
+                        if(feed[i].user_id == friends[j].user_id && friends[j].close_friend)
+                        {
+                            is_close_friend = true;
+                            break;
+                        }
+                    }
+                    if(!is_close_friend) continue;
+                }
                 ImGui::Text("Post by %s:", feed[i].display_name);
                 ImGui::Text("%s", feed[i].content);
                 ImGui::Text("Likes: %d  Comments: %d", feed[i].like_count, feed[i].comment_count);
                 if (ImGui::Button(("Like##"+std::to_string(i)).c_str()))
                 {
                     like_post(user_id, feed[i].post_id, response);
-                    feed[i].like_count++;
                 }
                 ImGui::SameLine();
                 if(add_comment[i])
                 {
-
                     ImGui::InputText("Comment", comment_buffer[i], COMMENT_LENGTH);
                     ImGui::SameLine();
                     if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
@@ -361,39 +430,27 @@ static void render_main_panel(float w, float h)
             }
             break;
 
-        case FRIENDS:
+        case SEARCH:
             static char follow_username[USERNAME_LENGTH] = "";
-            ImGui::Text("Add Friend:");
+            ImGui::Text("Search:");
             ImGui::InputText("Username", follow_username, USERNAME_LENGTH);
-            if(ImGui::Button("Send Follow Request"))
+            if(ImGui::Button("Search"))
             {
-                follow_request(user_id, follow_username, response);
-                follow_username[0] = '\0';
-            }
-            ImGui::Separator();
-            ImGui::Text("Follow Requests:");
-            if(!follow_request_loaded)
-            {
-                get_follow_requests(user_id, follow_requests, &follow_request_count, response);
-                follow_request_loaded = true;
-            }
-            for(int i = 0; i < follow_request_count; i++)
-            {
-                ImGui::Text("%s", follow_requests[i].display_name);
-                ImGui::SameLine();
-                if (ImGui::Button(("Accept##"+std::to_string(i)).c_str()))
-                {   
-                    accept_follow_request(user_id, follow_requests[i].display_name, response);
-                    follow_request_loaded = false;
+                if(strlen(follow_username) > 0)
+                {
+                    app_status = OTHER_USERS_PROFILE;
+                    search_user(follow_username, &other_user_id, response);
+                    follow_username[0] = '\0';
+                    other_user_posts_loaded = false;
+                    other_user_friends_loaded = false;
                     friends_loaded = false;
                 }
-                ImGui::SameLine();
-                if (ImGui::Button(("Reject##"+std::to_string(i)).c_str()))
-                {
-                    reject_follow_request(user_id, follow_requests[i].display_name, response);
-                }
             }
             ImGui::Separator();
+            break;
+        
+        case FRIENDS:
+            ImGui::Text("Chat with your friends!");
             break;
 
         case POST:
@@ -408,6 +465,8 @@ static void render_main_panel(float w, float h)
             ImGui::RadioButton("Public", &post_visibility, 0);
             ImGui::SameLine();
             ImGui::RadioButton("Private", &post_visibility, 1);
+            ImGui::SameLine();
+            ImGui::RadioButton("Close friends", &post_visibility, 2);
 
             if(ImGui::Button("Submit Post"))
             {
@@ -503,8 +562,144 @@ static void render_main_panel(float w, float h)
                 ImGui::Separator();
             }
             break;
-    }
 
+        case OTHER_USERS_PROFILE:
+            static bool add_comment_profile_post_other_user[MAX_POSTS] = { false };
+            static char username_other_user[USERNAME_LENGTH] = "";
+            static char display_name_other_user[USERNAME_LENGTH] = "";
+            static char bio_other_user[BIO_LENGTH] = "";
+            static int profile_visibility_other_user;
+            static Post other_user_posts[MAX_POSTS];
+            static int other_user_post_count = 0;
+            Friend other_user_friends[MAX_FRIENDS];
+            int other_user_friend_count = 0;
+            if(!other_user_friends_loaded)
+            {
+                get_friends_list(other_user_id, other_user_friends, &other_user_friend_count, response);
+                other_user_friends_loaded = true;
+            }
+            if(!friends_loaded)
+            {
+                get_friends_list(user_id, friends, &friend_count, response);
+                friends_loaded = true;
+            }
+            if(!other_user_posts_loaded)
+            {
+                get_profile(other_user_id, username_other_user, bio_other_user, display_name_other_user, &profile_visibility_other_user, response);
+                get_user_posts(other_user_id, other_user_posts, &other_user_post_count, response);
+                other_user_posts_loaded = true;
+            }
+
+            ImGui::Text("Username: %s", username_other_user);
+            ImGui::Text("Display Name: %s", display_name_other_user);
+            ImGui::Text("Bio: %s", bio_other_user);
+
+            bool is_following = false;
+            bool is_close_friend = false;
+            for (int i = 0; i < friend_count; i++)
+            {
+                if (friends[i].user_id == other_user_id)
+                {
+                    is_following = true;
+                    if(friends[i].close_friend)
+                        is_close_friend = friends[i].close_friend;
+                    break;
+                }
+            }
+            
+            bool is_followed = false;
+            for (int i = 0; i < other_user_friend_count; i++)
+            {
+                if (other_user_friends[i].user_id == user_id)
+                {
+                    is_followed = true;   
+                    break;
+                }
+            }
+
+            if (other_user_id != user_id)
+            {
+                if (!is_following && is_followed)
+                {
+                    if (ImGui::Button("Follow back"))
+                    {
+                        follow_request(user_id, username_other_user, response);
+                    }
+                }
+                else if (!is_following && !is_followed)
+                {
+                    if (ImGui::Button("Follow"))
+                    {
+                        follow_request(user_id, username_other_user, response);
+                    }
+                }
+                else if (is_following)
+                {
+                    if(is_close_friend)
+                    {
+                        if(ImGui::Button("Remove Close Friend"))
+                        {
+                            remove_close_friend(user_id, other_user_id, response);
+                            friends_loaded=false;
+                        }
+                    }
+                    else
+                    {
+                        if(ImGui::Button("Make Close Friend"))
+                        {
+                            add_close_friend(user_id, other_user_id, response);
+                            friends_loaded=false;
+                        }
+                    }
+                    ImGui::Separator();
+                    if (ImGui::Button("Unfollow"))
+                    {
+                        unfollow_request(user_id, username_other_user, response);
+                    }
+                }
+            }
+            ImGui::Separator();
+            if(profile_visibility_other_user == 1 && !is_following)
+            {
+                ImGui::Text("This profile is private.");
+                break;
+            }
+            ImGui::Text("Your Posts:");
+            static char comment_buffer_profile_other_user[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
+            for(int i = 0; i < other_user_post_count; i++)
+            {
+                ImGui::Text("%s", other_user_posts[i].content);
+                ImGui::Text("Likes: %d  Comments: %d", other_user_posts[i].like_count, other_user_posts[i].comment_count);
+                if(ImGui::Button(("Like##"+std::to_string(i)).c_str()))
+                {
+                    like_post(other_user_id, other_user_posts[i].post_id, response);
+                    get_user_posts(other_user_id, other_user_posts, &other_user_post_count, response);
+                }
+
+                ImGui::SameLine();
+
+                if(add_comment_profile_post_other_user[i])
+                {
+                    ImGui::InputText("Comment", comment_buffer_profile_other_user[i], COMMENT_LENGTH);
+                    ImGui::SameLine();
+                    if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
+                    {
+                        if(strcmp(comment_buffer_profile_other_user[i], "") != 0)
+                        {
+                            comment_post(other_user_id, other_user_posts[i].post_id, comment_buffer_profile_other_user[i], response);
+                            get_user_posts(other_user_id, other_user_posts, &other_user_post_count, response);
+                        }
+                        add_comment_profile_post_other_user[i] = false;
+                    }
+                }
+                else
+                {
+                    if(ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment_profile_post_other_user[i] = true;
+                }
+                ImGui::Separator();
+            }
+            break; 
+    }
     ImGui::End();
 }
 

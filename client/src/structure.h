@@ -15,9 +15,10 @@ enum STATE
 {
     LOGGED_OUT,
     LOGGED_IN,
+    SEARCH,
     FRIENDS,
     POST,
-    NOTIFICATIONS,
+    OTHER_USERS_PROFILE,
     PROFILE
 };
 
@@ -40,6 +41,7 @@ typedef struct{
 typedef struct {
     int user_id;
     char display_name[USERNAME_LENGTH];
+    int close_friend;
 } Friend;
 
 typedef struct {

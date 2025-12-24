@@ -26,6 +26,8 @@ int handle_follow_request(int client_fd, char* args);
 int handle_accept_follow_request(int client_fd, char* args);
 int handle_reject_follow_request(int client_fd, char* args);
 int handle_unfollow_request(int client_fd, char* args);
+int handle_add_close_friend(int client_fd, char* args);
+int handle_remove_close_friend(int client_fd, char* args);
 
 int handle_create_post(int client_fd, char* args);
 int handle_edit_post_description(int client_fd, char* args);
@@ -43,3 +45,5 @@ int handle_get_user_posts(int client_fd, char* args);
 int handle_get_feed(int client_fd, char* args);
 int handle_get_post_likes(int client_fd, char* args);
 int handle_get_post_comments(int client_fd, char* args);
+
+int handle_search_user(int client_fd, char* args);

@@ -259,6 +259,44 @@ int handle_unfollow_request(int client_fd, char* args)
     return 0;
 }
 
+int handle_add_close_friend(int client_fd, char* args)
+{
+    char* p=strtok(args, "|");
+    int user_id = atoi(p);
+    p=strtok(NULL, "|");
+    int close_friend_id = atoi(p);
+
+    if(db_add_close_friend(user_id, close_friend_id)==-1)
+    {
+        const char* response = "ADD_CLOSE_FRIEND ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    const char* response = "ADD_CLOSE_FRIEND OK";
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_remove_close_friend(int client_fd, char* args)
+{
+    char* p=strtok(args, "|");
+    int user_id = atoi(p);
+    p=strtok(NULL, "|");
+    int close_friend_id = atoi(p);
+
+    if(db_remove_close_friend(user_id, close_friend_id)==-1)
+    {
+        const char* response = "REMOVE_CLOSE_FRIEND ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    const char* response = "REMOVE_CLOSE_FRIEND OK";
+    send_message(client_fd, response);
+    return 0;
+}
+
 int handle_create_post(int client_fd, char* args)
 {
     char *p=strtok(args, "|");
@@ -295,12 +333,12 @@ int handle_edit_post_content(int client_fd, char* args)
 
     if(db_edit_post_content(user_id, post_id, new_content)==-1)
     {
-        const char* response = "EDIT_POST_content ERROR|Database error";
+        const char* response = "EDIT_POST_CONTENT ERROR|Database error";
         send_message(client_fd, response);
         return 0;
     }
 
-    const char* response = "EDIT_POST_content OK";
+    const char* response = "EDIT_POST_CONTENT OK";
     send_message(client_fd, response);
     return 0;
 }
@@ -388,6 +426,9 @@ int handle_delete_post(int client_fd, char* args)
 
 int handle_send_message_friend(int client_fd, char* args)
 {
+    char *p=strtok(args,"|");
+    int user_id = atoi(p);
+    printf("%d",user_id);
     const char* response = "SEND_MESSAGE_FRIEND OK";
     send_message(client_fd, response);
     return 0;
@@ -410,7 +451,7 @@ int handle_get_profile(int client_fd, char* args)
         return 0;
     }
 
-    char response[1000];
+    char response[2000];
     snprintf(response, sizeof(response), "GET_PROFILE OK|%s|%s|%s|%d", username, bio, display_name, visibility);
     printf("get profile: %s\n", response);
     send_message(client_fd, response);
@@ -425,6 +466,7 @@ int handle_get_friends_list(int client_fd, char* args)
     Friend friends[MAX_FRIENDS];
     int friend_count = 0;
 
+
     if(db_get_friends_list(user_id, friends, MAX_FRIENDS, &friend_count)==-1)
     {
         const char* response = "GET_FRIENDS_LIST ERROR|Database error";
@@ -436,7 +478,7 @@ int handle_get_friends_list(int client_fd, char* args)
     int offset = snprintf(response, sizeof(response), "GET_FRIENDS_LIST OK|%d", friend_count);
     for(int i=0; i<friend_count; i++)
     {
-        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s", friends[i].user_id, friends[i].display_name);
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s^%d", friends[i].user_id, friends[i].display_name, friends[i].close_friend);
     }
     printf("get friends list: %s\n", response);
     send_message(client_fd, response);
@@ -616,6 +658,28 @@ int handle_get_username_by_id(int client_fd, char* args)
     return 0;
 }
 
+int handle_search_user(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    char display_name[USERNAME_LENGTH];
+    strcpy(display_name, p);
+
+    int user_id;
+
+    if(db_search_user(display_name, &user_id)==-1)
+    {
+        const char* response = "SEARCH_USER ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    snprintf(response, sizeof(response), "SEARCH_USER OK|%d", user_id);
+    printf("search user: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
 int handle_commands(int client_fd)
 {
     int msg_length;
@@ -703,7 +767,7 @@ int handle_commands(int client_fd)
     {
         return handle_create_post(client_fd, args);
     }
-    else if (strcmp(command, "EDIT_POST_content") == 0)
+    else if (strcmp(command, "EDIT_POST_CONTENT") == 0)
     {
         return handle_edit_post_content(client_fd, args);
     }
@@ -758,6 +822,18 @@ int handle_commands(int client_fd)
     else if (strcmp(command, "GET_USERNAME_BY_ID") == 0)
     {
         return handle_get_username_by_id(client_fd, args);
+    }
+    else if (strcmp(command, "SEARCH_USER") == 0)
+    {
+        return handle_search_user(client_fd, args);
+    }
+    else if (strcmp(command, "ADD_CLOSE_FRIEND") == 0)
+    {
+        return handle_add_close_friend(client_fd, args);
+    }
+    else if (strcmp(command, "REMOVE_CLOSE_FRIEND") == 0)
+    {
+        return handle_remove_close_friend(client_fd, args);
     }
 
     return 0;
