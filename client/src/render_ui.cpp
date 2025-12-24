@@ -29,6 +29,21 @@ static bool follow_request_loaded = false;
 static bool other_user_posts_loaded = false;
 static bool other_user_friends_loaded = false;
 
+static ImFont* customFontBig;
+    
+void load_font()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->AddFontFromFileTTF("assets/font.ttf", 20.0f);
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    io.Fonts->AddFontFromFileTTF("assets/icons.ttf", 16.0f, &icons_config, icons_ranges);
+    
+    customFontBig=io.Fonts->AddFontFromFileTTF("assets/font.ttf", 26.0f);
+}
+
 void client_shutdown()
 {
     if (user_id != -1) 
@@ -51,7 +66,7 @@ void render_login_window(float total_width, float total_height)
     ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
     ImGui::OpenPopup("Login");
 
-    if (ImGui::BeginPopupModal("Login", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) 
+    if (ImGui::BeginPopupModal("Login", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)) 
     {
         static char username[USERNAME_LENGTH] = "";
         static char password[PASSWORD_LENGTH] = "";
@@ -88,7 +103,7 @@ void render_login_window(float total_width, float total_height)
                 else
                 {
                     app_status = LOGGED_OUT;
-                    strcpy(error_message, "Login failed: Invalid username or password.");
+                    strcpy(error_message, "Invalid username or password.");
                     has_error = true;
                 }
             }
@@ -126,7 +141,7 @@ void render_register_window(float total_width, float total_height)
     ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
     ImGui::OpenPopup("Register");
 
-    if (ImGui::BeginPopupModal("Register", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) 
+    if (ImGui::BeginPopupModal("Register", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)) 
     {
         static char username[USERNAME_LENGTH] = "";
         static char password[PASSWORD_LENGTH] = "";
@@ -193,11 +208,10 @@ void render_register_window(float total_width, float total_height)
 
 static void render_top_panel(float w, float h)
 {
-    float top_h = h * 0.10f;
+    float top_h = h * 0.12f;
     ImGui::SetNextWindowPos(ImVec2(0,0));
     ImGui::SetNextWindowSize(ImVec2(w, top_h));
-    ImGui::Begin("TopPanel", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("TopPanel", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
     if(app_status == LOGGED_OUT)
     {
@@ -208,7 +222,6 @@ static void render_top_panel(float w, float h)
     else
     {
         ImGui::Text("Logged in as: %s", connected_username);
-        ImGui::SameLine();
         if(ImGui::Button("Logout"))
         {
             app_status = LOGGED_OUT;
@@ -223,56 +236,58 @@ static void render_top_panel(float w, float h)
 
 static void render_left_panel(float w, float h)
 {
-    float top_h = h * 0.10f;
+    float top_h = h * 0.12f;
     float left_w = w * 0.18f;
 
     ImGui::SetNextWindowPos(ImVec2(0, top_h));
     ImGui::SetNextWindowSize(ImVec2(left_w, h - top_h));
-    ImGui::Begin("LeftPanel", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("LeftPanel", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
     float bw = left_w - 20;
     
     if(user_id != -1)
     {
-        if(ImGui::Button("Home", ImVec2(bw, 45))) 
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+
+        if(ImGui::Button(ICON_FA_HOUSE " Home", ImVec2(bw, 60))) 
         {
             app_status = LOGGED_IN;
             feed_loaded = false;
         }
         
-        if(ImGui::Button("Search", ImVec2(bw, 45))) 
+        if(ImGui::Button(ICON_FA_MAGNIFYING_GLASS " Search", ImVec2(bw, 60))) 
         {
             app_status = SEARCH;
             follow_request_loaded = false;
         }
     
-        if(ImGui::Button("Friends", ImVec2(bw, 45))) 
+        if(ImGui::Button(ICON_FA_USERS " Friends", ImVec2(bw, 60))) 
         {
             app_status = FRIENDS;
             friends_loaded = false;
         }
 
-        if(ImGui::Button("Post", ImVec2(bw, 45))) app_status = POST;
+        if(ImGui::Button(ICON_FA_SQUARE_PLUS" Post", ImVec2(bw, 60))) app_status = POST;
 
-        if(ImGui::Button("Profile", ImVec2(bw, 45))) 
+        if(ImGui::Button(ICON_FA_USER" Profile", ImVec2(bw, 60))) 
         {
             app_status = PROFILE;
             user_posts_loaded = false;
         }
+
+        ImGui::PopStyleColor();
     }
     ImGui::End();
 }
 
 static void render_right_panel(float w, float h)
 {
-    float top_h = h * 0.10f;
+    float top_h = h * 0.12f;
     float right_w = w * 0.18f;
 
     ImGui::SetNextWindowPos(ImVec2(w - right_w, top_h));
     ImGui::SetNextWindowSize(ImVec2(right_w, h - top_h));
-    ImGui::Begin("RightPanel", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("RightPanel", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
     if(app_status == FRIENDS)
     {
@@ -333,15 +348,14 @@ static void render_right_panel(float w, float h)
 
 static void render_main_panel(float w, float h)
 {
-    float top_h = h * 0.10f;
+    float top_h = h * 0.12f;
     float left_w = w * 0.18f;
     float right_w = w * 0.18f;
     static int other_user_id = -1;
 
     ImGui::SetNextWindowPos(ImVec2(left_w, top_h));
     ImGui::SetNextWindowSize(ImVec2(w - left_w - right_w, h - top_h));
-    ImGui::Begin("MainPanel", nullptr,
-        ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    ImGui::Begin("MainPanel", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
     switch(app_status)
     {
@@ -355,7 +369,10 @@ static void render_main_panel(float w, float h)
             {
                 if(feed[i].visibility == 1 || feed[i].visibility == 2) continue;
                 ImGui::Text("Post by %s:", feed[i].display_name);
+
+                ImGui::PushFont(customFontBig);
                 ImGui::Text("%s", feed[i].content);
+                ImGui::PopFont();
 
                 ImGui::Text("Likes: %d  Comments: %d", feed[i].like_count, feed[i].comment_count);
 
@@ -401,18 +418,21 @@ static void render_main_panel(float w, float h)
                     if(!is_close_friend) continue;
                 }
                 ImGui::Text("Post by %s:", feed[i].display_name);
+                ImGui::PushFont(customFontBig);
                 ImGui::Text("%s", feed[i].content);
+                ImGui::PopFont();
                 ImGui::Text("Likes: %d  Comments: %d", feed[i].like_count, feed[i].comment_count);
-                if (ImGui::Button(("Like##"+std::to_string(i)).c_str()))
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+
+                if (ImGui::Button((ICON_FA_HEART"##"+std::to_string(i)).c_str()))
                 {
                     like_post(user_id, feed[i].post_id, response);
                 }
                 ImGui::SameLine();
                 if(add_comment[i])
                 {
-                    ImGui::InputText("Comment", comment_buffer[i], COMMENT_LENGTH);
-                    ImGui::SameLine();
-                    if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
+                    if(ImGui::Button(("Submit comment##"+std::to_string(i)).c_str()))
                     {
                         if(strcmp(comment_buffer[i], "") != 0)
                         {
@@ -424,8 +444,14 @@ static void render_main_panel(float w, float h)
                 }
                 else
                 {
-                    if (ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment[i] = true;
+                    if (ImGui::Button((ICON_FA_COMMENT"##"+std::to_string(i)).c_str())) add_comment[i] = true;
                 }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button((ICON_FA_SHARE_NODES "##"+std::to_string(i)).c_str())) { int ok; }
+                
+                ImGui::PopStyleColor();
                 ImGui::Separator();
             }
             break;
@@ -512,7 +538,9 @@ static void render_main_panel(float w, float h)
 
                 if(ImGui::Button("Save Changes"))
                 {
-                    update_display_name(user_id, display_name, response);
+                    if(strlen(display_name) > 0)
+                        update_display_name(user_id, display_name, response);
+                    if(strlen(bio) > 0)
                     update_bio(user_id, bio, response);
                     update_profile_visibility(user_id, profile_visibility, response);
                     edit_mode = false;
@@ -530,10 +558,14 @@ static void render_main_panel(float w, float h)
             static char comment_buffer_profile[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
             for(int i = 0; i < user_post_count; i++)
             {
+                ImGui::PushFont(customFontBig);
                 ImGui::Text("%s", user_posts[i].content);
+                ImGui::PopFont();
                 ImGui::Text("Likes: %d  Comments: %d", user_posts[i].like_count, user_posts[i].comment_count);
 
-                if(ImGui::Button(("Like##"+std::to_string(i)).c_str()))
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+
+                if(ImGui::Button((ICON_FA_HEART"##"+std::to_string(i)).c_str()))
                 {
                     like_post(user_id, user_posts[i].post_id, response);
                     get_user_posts(user_id, user_posts, &user_post_count, response);
@@ -543,9 +575,7 @@ static void render_main_panel(float w, float h)
 
                 if(add_comment_profile_post[i])
                 {
-                    ImGui::InputText("Comment", comment_buffer_profile[i], COMMENT_LENGTH);
-                    ImGui::SameLine();
-                    if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
+                    if(ImGui::Button(("Submit comment##"+std::to_string(i)).c_str()))
                     {
                         if(strcmp(comment_buffer_profile[i], "") != 0)
                         {
@@ -557,8 +587,14 @@ static void render_main_panel(float w, float h)
                 }
                 else
                 {
-                    if(ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment_profile_post[i] = true;
+                    if(ImGui::Button((ICON_FA_COMMENT"##"+std::to_string(i)).c_str())) add_comment_profile_post[i] = true;
                 }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button((ICON_FA_SHARE_NODES "##"+std::to_string(i)).c_str())) { int ok; }
+                
+                ImGui::PopStyleColor();
                 ImGui::Separator();
             }
             break;
@@ -668,9 +704,14 @@ static void render_main_panel(float w, float h)
             static char comment_buffer_profile_other_user[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
             for(int i = 0; i < other_user_post_count; i++)
             {
+                ImGui::PushFont(customFontBig);
                 ImGui::Text("%s", other_user_posts[i].content);
+                ImGui::PopFont();
                 ImGui::Text("Likes: %d  Comments: %d", other_user_posts[i].like_count, other_user_posts[i].comment_count);
-                if(ImGui::Button(("Like##"+std::to_string(i)).c_str()))
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+
+                if(ImGui::Button((ICON_FA_HEART"##"+std::to_string(i)).c_str()))
                 {
                     like_post(other_user_id, other_user_posts[i].post_id, response);
                     get_user_posts(other_user_id, other_user_posts, &other_user_post_count, response);
@@ -680,9 +721,7 @@ static void render_main_panel(float w, float h)
 
                 if(add_comment_profile_post_other_user[i])
                 {
-                    ImGui::InputText("Comment", comment_buffer_profile_other_user[i], COMMENT_LENGTH);
-                    ImGui::SameLine();
-                    if(ImGui::Button(("Submit##"+std::to_string(i)).c_str()))
+                    if(ImGui::Button(("Submit comment##"+std::to_string(i)).c_str()))
                     {
                         if(strcmp(comment_buffer_profile_other_user[i], "") != 0)
                         {
@@ -694,8 +733,14 @@ static void render_main_panel(float w, float h)
                 }
                 else
                 {
-                    if(ImGui::Button(("Comment##"+std::to_string(i)).c_str())) add_comment_profile_post_other_user[i] = true;
+                    if(ImGui::Button((ICON_FA_COMMENT"##"+std::to_string(i)).c_str())) add_comment_profile_post_other_user[i] = true;
                 }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button((ICON_FA_SHARE_NODES "##"+std::to_string(i)).c_str())) { int ok; }
+
+                ImGui::PopStyleColor();
                 ImGui::Separator();
             }
             break; 

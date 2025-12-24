@@ -3,10 +3,12 @@
 #include "imgui.h"
 #include "messages.h"
 #include "structure.h"
+#include "Icons.h"
 
 // Functii generale
 void client_shutdown();
 
+void load_font();
 // Ferestre specifice
 void render_login_window(float total_width, float total_height);
 void render_register_window(float total_width, float total_height);
