@@ -323,7 +323,7 @@ void remove_close_friend(int user_id, int friend_id, char* response)
     printf("Received response: %s\n", response);
 }
 
-void post(int user_id, const char* content, int visibility, char* response)
+void create_post(int user_id, const char* content, int visibility, char* response)
 {
     char command[MESSAGE_LENGTH];
     snprintf(command, sizeof(command), "POST|%d|%s|%d", user_id, content, visibility);
@@ -551,7 +551,12 @@ void get_friends_list(int user_id, Friend* friends, int* friend_count, char* res
         friends[i].user_id = friend_id;
         strncpy(friends[i].display_name, display_name, USERNAME_LENGTH - 1);
         friends[i].display_name[USERNAME_LENGTH - 1] = '\0';
-        friends[i].close_friend = close_friend;
+        if(close_friend==1)
+        {
+            friends[i].close_friend = 0;
+        }
+        else
+            friends[i].close_friend = 1;
     }
 
     strcpy(response, "Lista de prieteni a fost preluata cu succes.");   
@@ -730,14 +735,12 @@ void get_post_likes(int post_id, Like* likes, int* like_count, char* response)
         likes[i].user_id = user_id;
         strncpy(likes[i].display_name, display_name, USERNAME_LENGTH - 1);
         likes[i].display_name[USERNAME_LENGTH - 1] = '\0';
-
-
     }
 
     strcpy(response, "Like-urile postarii au fost preluate cu succes.");
 }
 
-void get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGTH], int* comment_count, char* response)
+void get_post_comments(int post_id, Comment* comments, int* comment_count, char* response)
 {
     char command[MESSAGE_LENGTH];
     snprintf(command, sizeof(command), "GET_POST_COMMENTS|%d", post_id);
@@ -768,9 +771,9 @@ void get_post_comments(int post_id, int* user_ids, char comments[][COMMENT_LENGT
         char comment[COMMENT_LENGTH];
         int ret = sscanf(token, "%d^%49[^^]^%199[^^]", &user_id, display_name, comment);
         if (ret != 3) { printf("Parsing failed for token: %s\n", token); continue; }
-        user_ids[i] = user_id;
-        strncpy(comments[i], comment, COMMENT_LENGTH - 1);
-        comments[i][COMMENT_LENGTH - 1] = '\0';
+        comments[i].user_id = user_id;
+        strncpy(comments[i].comment, comment, COMMENT_LENGTH - 1);
+        strncpy(comments[i].display_name, display_name, USERNAME_LENGTH-1);
     }
 
     strcpy(response, "Comentariile postarii au fost preluate cu succes.");

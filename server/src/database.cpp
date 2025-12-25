@@ -460,7 +460,7 @@ int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* frie
     sqlite3_stmt* stmt;
 
     sqlite3_prepare_v2(db_conn,
-        "SELECT fr.receiver_id, u.display_name FROM friend_requests fr JOIN users u ON u.id = fr.receiver_id WHERE fr.sender_id = ? AND (fr.status = 1 OR fr.status = 2)",
+        "SELECT fr.receiver_id, u.display_name, fr.status FROM friend_requests fr JOIN users u ON u.id = fr.receiver_id WHERE fr.sender_id = ? AND (fr.status = 1 OR fr.status = 2)",
         -1, &stmt, NULL);
 
     sqlite3_bind_int(stmt, 1, user_id);

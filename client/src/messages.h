@@ -22,7 +22,7 @@ void reject_follow_request(int user_id, const char* username_to_reject, char* re
 void unfollow_request(int user_id, const char* username_to_unfollow, char* response);
 void add_close_friend(int user_id, int friend_id, char* response);
 void remove_close_friend(int user_id, int friend_id, char* response);
-void post(int user_id, const char* content, int visibility, char* response);
+void create_post(int user_id, const char* content, int visibility, char* response);
 void edit_post_visibility(int user_id, int post_id, int visibility, char* response);
 void edit_post_content(int user_id, int post_id, const char* content, char* response);
 void like_post(int user_id, int post_id, char* response);

@@ -11,6 +11,8 @@ void load_font();
 
 void render_login_window(float total_width, float total_height);
 void render_register_window(float total_width, float total_height);
+void render_posts_window(Post post, float total_width, float total_height);
+
 
 void render_friends_ui();
 void render_post_ui();
