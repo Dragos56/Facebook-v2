@@ -191,6 +191,7 @@ int db_update_profile_bio(int user_id, const char* bio)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_update_profile_display_name(int user_id, const char* display_name)
 {
     pthread_mutex_lock(&db_mutex);
@@ -203,6 +204,7 @@ int db_update_profile_display_name(int user_id, const char* display_name)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_update_profile_visibility(int user_id, int visibility)
 {
     pthread_mutex_lock(&db_mutex);
@@ -215,6 +217,7 @@ int db_update_profile_visibility(int user_id, int visibility)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_update_password(int user_id, const char* old_password_hash, const char* new_password_hash)
 {
     pthread_mutex_lock(&db_mutex);
@@ -228,6 +231,7 @@ int db_update_password(int user_id, const char* old_password_hash, const char* n
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_is_online(int user_id, int is_online)
 {
     pthread_mutex_lock(&db_mutex);
@@ -240,6 +244,7 @@ int db_is_online(int user_id, int is_online)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_delete_user(int user_id)
 {
     pthread_mutex_lock(&db_mutex);
@@ -256,8 +261,7 @@ int db_follow_user(int user_id, const char* username_to_follow)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "INSERT INTO friend_requests(sender_id, receiver_id) "
-                                 "SELECT ?, id FROM users WHERE username = ?", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "INSERT INTO friend_requests(sender_id, receiver_id) " "SELECT ?, id FROM users WHERE username = ?", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_follow, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
@@ -270,8 +274,7 @@ int db_accept_follow_request(int user_id, const char* username_to_accept)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 "
-                                 "WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 " "WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_accept, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -284,8 +287,7 @@ int db_reject_follow_request(int user_id, const char* username_to_reject)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests "
-                                 "WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests " "WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_reject, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -298,8 +300,7 @@ int db_unfollow_user(int user_id, const char* username_to_unfollow)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests "
-                                 "WHERE sender_id = ? AND receiver_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests " "WHERE sender_id = ? AND receiver_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_unfollow, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -312,8 +313,7 @@ int db_add_close_friend(int user_id, int friend_id)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 2 "
-                                 "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 2 " "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, friend_id);
     sqlite3_bind_int(stmt, 2, user_id);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -326,8 +326,7 @@ int db_remove_close_friend(int user_id, int friend_id)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 "
-                                 "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 " "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, friend_id);
     sqlite3_bind_int(stmt, 2, user_id);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -352,6 +351,7 @@ int db_create_post(int user_id, const char* content, int visibility, int* post_i
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_edit_post_content(int user_id, int post_id, const char* new_content)
 {
     pthread_mutex_lock(&db_mutex);
@@ -365,6 +365,7 @@ int db_edit_post_content(int user_id, int post_id, const char* new_content)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_edit_post_visibility(int user_id, int post_id, int new_visibility)
 {
     pthread_mutex_lock(&db_mutex);
@@ -378,6 +379,7 @@ int db_edit_post_visibility(int user_id, int post_id, int new_visibility)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_delete_post(int user_id, int post_id)
 {
     pthread_mutex_lock(&db_mutex);
@@ -390,6 +392,7 @@ int db_delete_post(int user_id, int post_id)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_like_post(int user_id, int post_id)
 {
     pthread_mutex_lock(&db_mutex);
@@ -402,6 +405,7 @@ int db_like_post(int user_id, int post_id)
     pthread_mutex_unlock(&db_mutex);
     return rc;
 }
+
 int db_comment_post(int user_id, int post_id, const char* comment)
 {
     pthread_mutex_lock(&db_mutex);
@@ -439,10 +443,10 @@ int db_get_profile(int user_id, char* username, char* bio, char* display_name, i
 
         *visibility = sqlite3_column_int(stmt, 3);
 
-        strncpy(username, uname ? (const char*)uname : "UnknownUser", USERNAME_LENGTH-1);
+        strncpy(username, uname ? (const char*)uname : "Unknown user", USERNAME_LENGTH-1);
         username[USERNAME_LENGTH-1] = '\0';
 
-        strncpy(bio, b ? (const char*)b : "This user has no bio.", BIO_LENGTH-1);
+        strncpy(bio, b ? (const char*)b : "No bio yet.", BIO_LENGTH-1);
         bio[BIO_LENGTH-1] = '\0';
 
         strncpy(display_name, dname ? (const char*)dname : username, USERNAME_LENGTH-1);

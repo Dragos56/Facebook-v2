@@ -31,15 +31,6 @@ static void *treat(void *);
 void raspunde(int client, int idThread);
 void threadCreate(int i);
 
-void stop_server()
-{
-    db_close();
-    close(sd);
-    pthread_mutex_destroy(&mlock);
-    free(threadsPool);
-    exit(0);
-}
-
 int main(int argc, char *argv[])
 {
     struct sockaddr_in server;
@@ -62,8 +53,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "EROARE DB, se inchide server-ul...\n");
         exit(1);
     }
-
-    //signal(SIGINT, stop_server());
 
     threadsPool = (Thread*)calloc(sizeof(Thread), nthreads);
 

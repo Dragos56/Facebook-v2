@@ -19,7 +19,4 @@ void render_post_ui();
 void render_notifications_ui();
 void render_profile_ui();
 
-void render_loggedOut_ui();
-void render_loggedIn_ui();
-
 void render_ui(float window_width, float window_height);

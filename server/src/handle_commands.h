@@ -37,6 +37,7 @@ int handle_like_post(int client_fd, char* args);
 int handle_comment_post(int client_fd, char* args);
 
 int handle_send_message_friend(int client_fd, char* args);
+int handle_search_user(int client_fd, char* args);
 
 int handle_get_profile(int client_fd, char* args);
 int handle_get_friends_list(int client_fd, char* args);
@@ -45,5 +46,3 @@ int handle_get_user_posts(int client_fd, char* args);
 int handle_get_feed(int client_fd, char* args);
 int handle_get_post_likes(int client_fd, char* args);
 int handle_get_post_comments(int client_fd, char* args);
-
-int handle_search_user(int client_fd, char* args);

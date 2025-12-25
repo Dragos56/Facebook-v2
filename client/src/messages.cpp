@@ -478,17 +478,14 @@ void get_profile(int user_id, char* username, char* bio, char* display_name, int
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n <= 0) 
-    { 
-        strcpy(response, "Eroare la primire."); 
-        return; 
-    }
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
 
     buffer[n] = '\0';
 
     if(strncmp(buffer, "GET_PROFILE ERROR", 17) == 0)
     {
-        strcpy(response, "Eroare la primire.");
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return;
     }
 
@@ -509,6 +506,7 @@ void get_profile(int user_id, char* username, char* bio, char* display_name, int
     *visibility = atoi(token);
 
     strcpy(response, "Profilul a fost preluat cu succes.");
+    printf("Received response: %s\n", response);
 }
 
 void get_friends_list(int user_id, Friend* friends, int* friend_count, char* response)
@@ -519,17 +517,14 @@ void get_friends_list(int user_id, Friend* friends, int* friend_count, char* res
 
     char buffer[MESSAGE_LENGTH];
     int n = receive_message(buffer);
-    if (n <= 0) 
-    { 
-        strcpy(response, "Eroare la primire."); 
-        return; 
-    }
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
 
     buffer[n] = '\0';
 
     if(strncmp(buffer, "GET_FRIENDS_LIST ERROR", 21) == 0)
     {
-        strcpy(response, "Eroare la primire.");
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return;
     }
 
@@ -559,7 +554,8 @@ void get_friends_list(int user_id, Friend* friends, int* friend_count, char* res
             friends[i].close_friend = 1;
     }
 
-    strcpy(response, "Lista de prieteni a fost preluata cu succes.");   
+    strcpy(response, "Lista de prieteni a fost preluata cu succes.");  
+    printf("Received response: %s\n", response); 
 }
 
 void get_follow_requests(int user_id, Request* requests, int* request_count, char* response)
@@ -576,7 +572,8 @@ void get_follow_requests(int user_id, Request* requests, int* request_count, cha
 
     if(strncmp(buffer, "GET_FOLLOW_REQUESTS ERROR", 25) == 0)
     {
-        strcpy(response, "Eroare la primire.");
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return;
     }
 
@@ -600,6 +597,7 @@ void get_follow_requests(int user_id, Request* requests, int* request_count, cha
     }
 
     strcpy(response, "Cererile de urmarire au fost preluate cu succes.");
+    printf("Received response: %s\n", response);
 }
 
 void get_user_posts(int user_id, Post* posts, int* post_count, char* response)
@@ -616,7 +614,8 @@ void get_user_posts(int user_id, Post* posts, int* post_count, char* response)
 
     if (strncmp(buffer, "GET_USER_POSTS ERROR", 20) == 0) 
     { 
-        strcpy(response, "Eroare la primire."); 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response); 
         return; 
     }
 
@@ -650,6 +649,7 @@ void get_user_posts(int user_id, Post* posts, int* post_count, char* response)
     }
 
     strcpy(response, "Postările au fost preluate cu succes.");
+    printf("Received response: %s\n", response);
 }
 
 void get_feed(int user_id, Post* posts, int* post_count, char* response)
@@ -666,7 +666,8 @@ void get_feed(int user_id, Post* posts, int* post_count, char* response)
 
     if(strncmp(buffer, "GET_FEED ERROR", 14) == 0) 
     { 
-        strcpy(response, "Eroare la primire."); 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return; 
     }
 
@@ -698,6 +699,7 @@ void get_feed(int user_id, Post* posts, int* post_count, char* response)
     }
 
     strcpy(response, "Feed-ul a fost preluat cu succes.");
+    printf("Received response: %s\n", response);
 }
 
 void get_post_likes(int post_id, Like* likes, int* like_count, char* response)
@@ -713,7 +715,8 @@ void get_post_likes(int post_id, Like* likes, int* like_count, char* response)
     buffer[n] = '\0';
     if(strncmp(buffer, "GET_POST_LIKES ERROR", 20) == 0) 
     { 
-        strcpy(response, "Eroare la primire."); 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return; 
     }
 
@@ -738,6 +741,7 @@ void get_post_likes(int post_id, Like* likes, int* like_count, char* response)
     }
 
     strcpy(response, "Like-urile postarii au fost preluate cu succes.");
+    printf("Received response: %s\n", response);
 }
 
 void get_post_comments(int post_id, Comment* comments, int* comment_count, char* response)
@@ -753,7 +757,8 @@ void get_post_comments(int post_id, Comment* comments, int* comment_count, char*
     buffer[n] = '\0';
     if(strncmp(buffer, "GET_POST_COMMENTS ERROR", 23) == 0) 
     { 
-        strcpy(response, "Eroare la primire."); 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return; 
     }
 
@@ -777,6 +782,7 @@ void get_post_comments(int post_id, Comment* comments, int* comment_count, char*
     }
 
     strcpy(response, "Comentariile postarii au fost preluate cu succes.");
+    printf("Received response: %s\n", response); 
 }
 
 void get_username_by_id(int user_id, char* username, char* response)
@@ -792,7 +798,8 @@ void get_username_by_id(int user_id, char* username, char* response)
     buffer[n] = '\0';
     if(strncmp(buffer, "GET_USERNAME_BY_ID ERROR", 23) == 0) 
     { 
-        strcpy(response, "Eroare la primire."); 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response);
         return; 
     }
 
@@ -802,6 +809,7 @@ void get_username_by_id(int user_id, char* username, char* response)
     username[USERNAME_LENGTH - 1] = '\0';
 
     strcpy(response, "Numele de utilizator a fost preluat cu succes.");
+    printf("Received response: %s\n", response); 
 }
 
 void search_user(const char* display_name, int* user_id, char* response)
@@ -817,7 +825,8 @@ void search_user(const char* display_name, int* user_id, char* response)
     buffer[n] = '\0';
     if(strncmp(buffer, "SEARCH_USER ERROR", 17) == 0) 
     { 
-        strcpy(response, "Eroare la primire."); 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response); 
         return; 
     }
 
@@ -826,4 +835,5 @@ void search_user(const char* display_name, int* user_id, char* response)
     *user_id = atoi(token);
 
     strcpy(response, "Utilizatorul a fost gasit cu succes.");
+    printf("Received response: %s\n", response); 
 }
