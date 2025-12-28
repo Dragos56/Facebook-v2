@@ -484,20 +484,30 @@ static void render_right_panel(float w, float h)
                         ImGui::CloseCurrentPopup();
                     }
 
-                    if (ImGui::Button("Add to group"))
+                    if (ImGui::Button("Add to group", ImVec2(button_width, button_height)))
                     {
-                        ImGui::OpenPopup(("group##" + std::to_string(i)).c_str());
-                        ImGui::CloseCurrentPopup();
+                        ImGui::OpenPopup(("group_select_popup##" + std::to_string(i)).c_str());
                     }
 
-                    if (ImGui::BeginPopup(("group##" + std::to_string(i)).c_str()))
+                    if (ImGui::BeginPopup(("group_select_popup##" + std::to_string(i)).c_str()))
                     {
-                        if (ImGui::Button(groups[i].name, ImVec2(button_width, button_height)))
+                        if (groups_count == 0)
                         {
-                            groups_loaded = false;
-                            add_user_group(groups[i].id, friends[i].user_id, response);
+                            ImGui::Text("No groups available.");
                         }
-                        ImGui::Separator();
+                        else
+                        {
+                            for (int j = 0; j < groups_count; j++)
+                            {
+                                if (ImGui::Button(groups[j].name, ImVec2(button_width, button_height)))
+                                {
+                                    groups_loaded = false;
+                                    add_user_group(groups[j].id, friends[i].user_id, response);
+                                    ImGui::CloseCurrentPopup();
+                                }
+                            }
+                        }
+                        ImGui::EndPopup();
                     }
 
                     ImGui::EndPopup();
@@ -536,24 +546,35 @@ static void render_right_panel(float w, float h)
                         ImGui::CloseCurrentPopup();
                     }
 
-                    if (ImGui::Button("Add to group"))
+                    if (ImGui::Button("Add to group", ImVec2(button_width, button_height)))
                     {
-                        ImGui::OpenPopup(("group##" + std::to_string(i)).c_str());
-                        ImGui::CloseCurrentPopup();
+                        ImGui::OpenPopup(("group_select_popup##" + std::to_string(i)).c_str());
                     }
 
-                    if (ImGui::BeginPopup(("group##" + std::to_string(i)).c_str()))
+                    if (ImGui::BeginPopup(("group_select_popup##" + std::to_string(i)).c_str()))
                     {
-                        if (ImGui::Button(groups[i].name, ImVec2(button_width, button_height)))
+                        if (groups_count == 0)
                         {
-                            groups_loaded = false;
-                            add_user_group(groups[i].id, friends[i].user_id, response);
+                            ImGui::Text("No groups available.");
                         }
-                        ImGui::Separator();
+                        else
+                        {
+                            for (int j = 0; j < groups_count; j++)
+                            {
+                                if (ImGui::Button(groups[j].name, ImVec2(button_width, button_height)))
+                                {
+                                    groups_loaded = false;
+                                    add_user_group(groups[j].id, friends[i].user_id, response);
+                                    ImGui::CloseCurrentPopup();
+                                }
+                            }
+                        }
+                        ImGui::EndPopup();
                     }
-
                     ImGui::EndPopup();
                 }
+
+                ImGui::Separator();
             }
         }
 
