@@ -3,6 +3,7 @@
 #define USERNAME_LENGTH 100
 #define PASSWORD_LENGTH 100
 #define MESSAGE_LENGTH 1000
+#define COMMENT_LENGTH 256
 #define BIO_LENGTH 1000
 #define VISIBILITY_LENGTH 10
 #define MAX_POSTS 100
@@ -10,7 +11,8 @@
 #define MAX_LIKES 100
 #define MAX_COMMENTS 100
 #define MAX_FOLLOW_REQUESTS 100
-#define COMMENT_LENGTH 256
+#define MAX_MESSAGES 100
+#define MAX_GROUPS 100
 
 enum STATE
 {
@@ -58,3 +60,26 @@ typedef struct {
     Comment comments[MAX_COMMENTS];
     int comment_count;
 } Post;
+
+typedef struct {
+    int id;                 
+    int sender_id;          
+    int receiver_id;    
+    char sender_display_name[USERNAME_LENGTH]; 
+    char receiver_display_name[USERNAME_LENGTH];   
+    char content[MESSAGE_LENGTH];
+} PrivateMessage;
+
+typedef struct {
+    int id;                
+    char name[USERNAME_LENGTH];
+    int owner_id;  
+    char owner_display_name[USERNAME_LENGTH];
+} Group;
+
+typedef struct {
+    int group_id;         
+    int sender_id;        
+    char sender_display_name[USERNAME_LENGTH];
+    char content[MESSAGE_LENGTH];
+} GroupMessage;

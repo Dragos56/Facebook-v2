@@ -36,7 +36,6 @@ int handle_delete_post(int client_fd, char* args);
 int handle_like_post(int client_fd, char* args);
 int handle_comment_post(int client_fd, char* args);
 
-int handle_send_message_friend(int client_fd, char* args);
 int handle_search_user(int client_fd, char* args);
 
 int handle_get_profile(int client_fd, char* args);
@@ -46,3 +45,12 @@ int handle_get_user_posts(int client_fd, char* args);
 int handle_get_feed(int client_fd, char* args);
 int handle_get_post_likes(int client_fd, char* args);
 int handle_get_post_comments(int client_fd, char* args);
+
+int handle_send_private_message(int client_fd, char* args);
+int handle_get_private_messages(int client_fd, char* args);
+
+int handle_create_group(int client_fd, char* args);
+int handle_add_user_group(int client_fd, char*);
+int handle_get_groups(int client_fd, char* args);
+int handle_send_group_message(int client_fd, char* args);
+int handle_get_group_messages(int client_fd, char* args);

@@ -32,7 +32,6 @@ void like_post(int user_id, int post_id, char* response);
 void comment_post(int user_id, int post_id, const char* comment, char* response);
 void delete_post(int user_id, int post_id, char* response);
 
-void send_message_friend(int user_id, const char* friend_name, const char* message, char* response);
 void search_user(const char* display_name, int* user_id, char* response);
 
 void get_profile(int user_id, char* username, char* bio, char* display_name, int* visibility, char* response);
@@ -43,3 +42,12 @@ void get_feed(int user_id, Post* posts, int* post_count, char* response);
 void get_post_likes(int post_id, Like* likes, int* like_count, char* response);
 void get_post_comments(int post_id, Comment* comments, int* comment_count, char* response);   
 void get_username_by_id(int user_id, char* username, char* response);
+
+void send_private_message(int sender_id, int receiver_id, const char* content, char* response);
+void get_private_messages(int user1_id, int user2_id, PrivateMessage* messages, int* messages_count, char* response);
+
+void create_group(const char* group_name, int owner_id, char* response);
+void add_user_group(int group_id, int user_id, char* response);
+void get_groups(int user_id, Group* groups, int* groups_count, char* response);
+void send_group_message(int group_id, int sender_id, const char* content, char* response);
+void get_group_messages(int group_id, GroupMessage* messages, int* messages_count, char* response);

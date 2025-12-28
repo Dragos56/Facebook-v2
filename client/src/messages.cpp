@@ -449,27 +449,6 @@ void delete_post(int user_id, int post_id, char* response)
     printf("Received response: %s\n", response);
 }
 
-void send_message_friend(int user_id, const char* friend_name, const char* message, char* response)
-{
-    char command[MESSAGE_LENGTH];
-    snprintf(command, sizeof(command), "SEND_MESSAGE_FRIEND|%d|%s|%s", user_id, friend_name, message);
-    printf("Sending command: %s\n", command);
-    send_message(command);
-
-    char buffer[MESSAGE_LENGTH];
-    int n = receive_message(buffer);
-    if (n > 0) 
-    {
-        buffer[n] = '\0';
-        strcpy(response, buffer);
-    } 
-    else 
-    {
-        strcpy(response, "Eroare la primire.");
-    }
-    printf("Received response: %s\n", response);
-}
-
 void get_profile(int user_id, char* username, char* bio, char* display_name, int* visibility, char* response)
 {
     char command[MESSAGE_LENGTH];
@@ -836,4 +815,189 @@ void search_user(const char* display_name, int* user_id, char* response)
 
     strcpy(response, "Utilizatorul a fost gasit cu succes.");
     printf("Received response: %s\n", response); 
+}
+
+void send_private_message(int sender_id, int receiver_id, const char* content, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "SEND_PRIVATE_MESSAGE|%d|%d|%s", sender_id, receiver_id, content);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void get_private_messages(int user1_id, int user2_id, PrivateMessage* messages, int* messages_count, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "GET_PRIVATE_MESSAGES|%d|%d", user1_id, user2_id);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
+
+    buffer[n] = '\0';
+    if(strncmp(buffer, "GET_PRIVATE_MESSAGES ERROR", 26) == 0) 
+    { 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response); 
+        return; 
+    }
+
+    char* token = strtok(buffer, "|");
+    token = strtok(NULL, "|");  
+    *messages_count = atoi(token);
+
+    for(int i = 0; i < *messages_count && i < MAX_MESSAGES; i++)
+    {
+        token = strtok(NULL, "|");
+        if(!token) break;
+
+        int ret = sscanf(token, "%d^%d^%d^%49[^^]^%49[^^]^%255[^^]", &messages[i].id, &messages[i].sender_id, &messages[i].receiver_id, messages[i].sender_display_name, messages[i].receiver_display_name, messages[i].content);
+        if(ret != 6) { printf("Parsing failed for token: %s\n", token); continue; }
+    }
+
+    strcpy(response, "Mesaje private preluate cu succes.");
+    printf("Received response: %s\n", response);
+}
+
+void create_group(const char* group_name, int owner_id, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "CREATE_GROUP|%s|%d", group_name, owner_id);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void add_user_group(int group_id, int user_id, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "ADD_USER_GROUP|%d|%d", group_id, user_id);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void get_groups(int user_id, Group* groups, int* groups_count, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "GET_GROUPS|%d", user_id);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
+
+    buffer[n] = '\0';
+    if(strncmp(buffer, "GET_GROUPS ERROR", 16) == 0) 
+    { 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response); 
+        return; 
+    }
+
+    char* token = strtok(buffer, "|"); 
+    token = strtok(NULL, "|");          
+    *groups_count = atoi(token);
+
+    for(int i = 0; i < *groups_count && i < MAX_GROUPS; i++)
+    {
+        token = strtok(NULL, "|");
+        if(!token) break;
+
+        int ret = sscanf(token, "%d^%49[^^]^%d^%49[^^]", &groups[i].id, groups[i].name, &groups[i].owner_id, groups[i].owner_display_name);
+        if(ret != 4) { printf("Parsing failed for token: %s\n", token); continue; }
+    }
+
+    strcpy(response, "Lista grupurilor a fost preluata cu succes.");
+    printf("Received response: %s\n", response);
+}
+
+void send_group_message(int group_id, int sender_id, const char* content, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "SEND_GROUP_MESSAGE|%d|%d|%s", group_id, sender_id, content);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n > 0) 
+    {
+        buffer[n] = '\0';
+        strcpy(response, buffer);
+    } 
+    else 
+    {
+        strcpy(response, "Eroare la primire.");
+    }
+    printf("Received response: %s\n", response);
+}
+
+void get_group_messages(int group_id, GroupMessage* messages, int* messages_count, char* response)
+{
+    char command[MESSAGE_LENGTH];
+    snprintf(command, sizeof(command), "GET_GROUP_MESSAGES|%d", group_id);
+    send_message(command);
+
+    char buffer[MESSAGE_LENGTH];
+    int n = receive_message(buffer);
+    if (n <= 0) { strcpy(response, "Eroare la primire."); return; }
+
+    buffer[n] = '\0';
+    if(strncmp(buffer, "GET_GROUP_MESSAGES ERROR", 24) == 0) 
+    { 
+        strcpy(response, buffer); 
+        printf("Received response: %s\n", response); 
+        return; 
+    }
+
+    char* token = strtok(buffer, "|");  
+    token = strtok(NULL, "|");       
+    *messages_count = atoi(token);
+
+    for(int i = 0; i < *messages_count && i < MAX_MESSAGES; i++)
+    {
+        token = strtok(NULL, "|");
+        if(!token) break;
+
+        int ret = sscanf(token, "%d^%d^%49[^^]^%255[^^]", &messages[i].group_id, &messages[i].sender_id, messages[i].sender_display_name, messages[i].content);
+        if(ret != 4) { printf("Parsing failed for token: %s\n", token); continue; }
+    }
+
+    strcpy(response, "Mesaje grup preluate cu succes.");
+    printf("Received response: %s\n", response);
 }

@@ -22,8 +22,8 @@ int db_init(const char* filename)
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "username TEXT UNIQUE NOT NULL, "
         "password TEXT NOT NULL, "
-        "display_name TEXT, "
-        "bio TEXT, "
+        "display_name TEXT NOT NULL, "
+        "bio TEXT NOT NULL, "
         "visibility INTEGER DEFAULT 0, "
         "is_online INTEGER DEFAULT 0"
         ");"
@@ -140,10 +140,14 @@ int db_add_user(const char* username, const char* password_hash)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "INSERT INTO users(username, password, display_name) VALUES (?, ?, ?)", -1, &stmt, NULL);
+
+    const char* default_bio = "No bio yet";
+
+    sqlite3_prepare_v2(db_conn, "INSERT INTO users(username, password, display_name, bio) VALUES (?, ?, ?, ?)", -1, &stmt, NULL);
     sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, password_hash, -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 3, username, -1, SQLITE_STATIC); 
+    sqlite3_bind_text(stmt, 4, default_bio, -1, SQLITE_STATIC); 
     int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
@@ -261,7 +265,7 @@ int db_follow_user(int user_id, const char* username_to_follow)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "INSERT INTO friend_requests(sender_id, receiver_id) " "SELECT ?, id FROM users WHERE username = ?", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "INSERT INTO friend_requests(sender_id, receiver_id) SELECT ?, id FROM users WHERE username = ?", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_follow, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE) ? 0 : -1;
@@ -274,7 +278,7 @@ int db_accept_follow_request(int user_id, const char* username_to_accept)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 " "WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE display_name = ?) AND status = 0", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_accept, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -287,7 +291,7 @@ int db_reject_follow_request(int user_id, const char* username_to_reject)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests " "WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests WHERE receiver_id = ? AND sender_id = (SELECT id FROM users WHERE display_name = ?)", -1, &stmt, NULL);
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_reject, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
@@ -300,9 +304,17 @@ int db_unfollow_user(int user_id, const char* username_to_unfollow)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "DELETE FROM friend_requests " "WHERE sender_id = ? AND receiver_id = (SELECT id FROM users WHERE username = ?)", -1, &stmt, NULL);
+    sqlite3_prepare_v2(db_conn,
+        "DELETE FROM friend_requests "
+        "WHERE (sender_id = ? AND receiver_id = (SELECT id FROM users WHERE username = ?)) "
+        "   OR (receiver_id = ? AND sender_id = (SELECT id FROM users WHERE username = ?))",
+        -1, &stmt, NULL
+    );
+
     sqlite3_bind_int(stmt, 1, user_id);
     sqlite3_bind_text(stmt, 2, username_to_unfollow, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3, user_id);
+    sqlite3_bind_text(stmt, 4, username_to_unfollow, -1, SQLITE_STATIC);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
@@ -313,9 +325,17 @@ int db_add_close_friend(int user_id, int friend_id)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 2 " "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
-    sqlite3_bind_int(stmt, 1, friend_id);
-    sqlite3_bind_int(stmt, 2, user_id);
+    sqlite3_prepare_v2(db_conn,
+        "UPDATE friend_requests SET status = 2 "
+        "WHERE (sender_id = ? AND receiver_id = ?) "
+        "   OR (receiver_id = ? AND sender_id = ?)",
+        -1, &stmt, NULL
+    );
+
+    sqlite3_bind_int(stmt, 1, user_id);
+    sqlite3_bind_int(stmt, 2, friend_id);
+    sqlite3_bind_int(stmt, 3, user_id);
+    sqlite3_bind_int(stmt, 4, friend_id);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
@@ -326,9 +346,17 @@ int db_remove_close_friend(int user_id, int friend_id)
 {
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
-    sqlite3_prepare_v2(db_conn, "UPDATE friend_requests SET status = 1 " "WHERE receiver_id = ? AND sender_id = ?", -1, &stmt, NULL);
-    sqlite3_bind_int(stmt, 1, friend_id);
-    sqlite3_bind_int(stmt, 2, user_id);
+    sqlite3_prepare_v2(db_conn,
+        "UPDATE friend_requests SET status = 1 "
+        "WHERE (sender_id = ? AND receiver_id = ?) "
+        "   OR (receiver_id = ? AND sender_id = ?)",
+        -1, &stmt, NULL
+    );
+
+    sqlite3_bind_int(stmt, 1, user_id);
+    sqlite3_bind_int(stmt, 2, friend_id);
+    sqlite3_bind_int(stmt, 3, user_id);
+    sqlite3_bind_int(stmt, 4, friend_id);
     int rc = (sqlite3_step(stmt) == SQLITE_DONE && sqlite3_changes(db_conn) > 0) ? 0 : -1;
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
@@ -464,10 +492,21 @@ int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* frie
     sqlite3_stmt* stmt;
 
     sqlite3_prepare_v2(db_conn,
-        "SELECT fr.receiver_id, u.display_name, fr.status FROM friend_requests fr JOIN users u ON u.id = fr.receiver_id WHERE fr.sender_id = ? AND (fr.status = 1 OR fr.status = 2)",
-        -1, &stmt, NULL);
+        "SELECT "
+        "CASE WHEN fr.sender_id = ? THEN fr.receiver_id ELSE fr.sender_id END AS friend_id, "
+        "u.display_name, fr.status "
+        "FROM friend_requests fr "
+        "JOIN users u ON u.id = "
+        "CASE WHEN fr.sender_id = ? THEN fr.receiver_id ELSE fr.sender_id END "
+        "WHERE (fr.sender_id = ? OR fr.receiver_id = ?) "
+        "AND fr.status >= 1",
+        -1, &stmt, NULL
+    );
 
     sqlite3_bind_int(stmt, 1, user_id);
+    sqlite3_bind_int(stmt, 2, user_id);
+    sqlite3_bind_int(stmt, 3, user_id);
+    sqlite3_bind_int(stmt, 4, user_id);
 
     int count = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW && count < max_friends)
@@ -478,7 +517,7 @@ int db_get_friends_list(int user_id, Friend* friends, int max_friends, int* frie
         strncpy(friends[count].display_name, uname ? (const char*)uname : "Unknown", USERNAME_LENGTH-1);
         friends[count].display_name[USERNAME_LENGTH-1] = '\0';
 
-        friends[count].close_friend = sqlite3_column_int(stmt, 2); 
+        friends[count].close_friend = sqlite3_column_int(stmt, 2);
 
         count++;
     }
@@ -724,4 +763,231 @@ int db_search_user(const char* display_name, int* user_id)
     sqlite3_finalize(stmt);
     pthread_mutex_unlock(&db_mutex);
     return rc;
+}
+
+int db_send_private_message(int sender_id, int receiver_id, const char* content)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)",
+        -1, &stmt, NULL);
+    
+    sqlite3_bind_int(stmt, 1, sender_id);
+    sqlite3_bind_int(stmt, 2, receiver_id);
+    sqlite3_bind_text(stmt, 3, content, -1, SQLITE_TRANSIENT);
+
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+
+    return rc == SQLITE_DONE ? 0 : -1;
+}
+
+int db_get_private_messages(int user1_id, int user2_id, PrivateMessage* messages, int max_messages, int* count)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "SELECT m.id, m.sender_id, m.receiver_id, u1.display_name, u2.display_name, m.content "
+        "FROM messages m "
+        "JOIN users u1 ON m.sender_id = u1.id "
+        "JOIN users u2 ON m.receiver_id = u2.id "
+        "WHERE (m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?) "
+        "ORDER BY m.created_at ASC",
+        -1, &stmt, NULL);
+
+    sqlite3_bind_int(stmt, 1, user1_id);
+    sqlite3_bind_int(stmt, 2, user2_id);
+    sqlite3_bind_int(stmt, 3, user2_id);
+    sqlite3_bind_int(stmt, 4, user1_id);
+
+    int idx = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW && idx < max_messages)
+    {
+        memset(&messages[idx], 0, sizeof(PrivateMessage));
+
+        messages[idx].id = sqlite3_column_int(stmt, 0);
+        messages[idx].sender_id = sqlite3_column_int(stmt, 1);
+        messages[idx].receiver_id = sqlite3_column_int(stmt, 2);
+
+        const unsigned char* sender_dn = sqlite3_column_text(stmt, 3);
+        const unsigned char* receiver_dn = sqlite3_column_text(stmt, 4);
+        const unsigned char* cont = sqlite3_column_text(stmt, 5);
+
+        strncpy(messages[idx].sender_display_name, sender_dn ? (const char*)sender_dn : "Unknown", USERNAME_LENGTH-1);
+        messages[idx].sender_display_name[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(messages[idx].receiver_display_name, receiver_dn ? (const char*)receiver_dn : "Unknown", USERNAME_LENGTH-1);
+        messages[idx].receiver_display_name[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(messages[idx].content, cont ? (const char*)cont : "", MESSAGE_LENGTH-1);
+        messages[idx].content[MESSAGE_LENGTH-1] = '\0';
+
+        idx++;
+    }
+
+    *count = idx;
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return 0;
+}
+
+int db_add_user_group(int group_id, int user_id)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)",
+        -1, &stmt, NULL);
+
+    sqlite3_bind_int(stmt, 1, group_id);
+    sqlite3_bind_int(stmt, 2, user_id);
+
+    int rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+
+    return rc == SQLITE_DONE ? 0 : -1;
+}
+
+int db_create_group(const char* name, int owner_id)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "INSERT INTO groups (name, owner_id) VALUES (?, ?)",
+        -1, &stmt, NULL);
+
+    sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 2, owner_id);
+
+    int rc = sqlite3_step(stmt);
+    int group_id = (int)sqlite3_last_insert_rowid(db_conn);
+
+    sqlite3_finalize(stmt);
+
+    if (rc == SQLITE_DONE)
+    {
+        sqlite3_prepare_v2(db_conn,
+            "INSERT INTO group_members (group_id, user_id) VALUES (?, ?)",
+            -1, &stmt, NULL);
+
+        sqlite3_bind_int(stmt, 1, group_id);
+        sqlite3_bind_int(stmt, 2, owner_id);
+
+        rc = sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+    }
+
+    pthread_mutex_unlock(&db_mutex);
+
+    return rc == SQLITE_DONE ? group_id : -1;
+}
+
+int db_get_groups(int user_id, Group* groups, int max_groups, int* count)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "SELECT g.id, g.name, g.owner_id, u.display_name "
+        "FROM groups g "
+        "JOIN group_members gm ON g.id = gm.group_id "
+        "JOIN users u ON g.owner_id = u.id "
+        "WHERE gm.user_id = ?",
+        -1, &stmt, NULL);
+
+    sqlite3_bind_int(stmt, 1, user_id);
+
+    int idx = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW && idx < max_groups)
+    {
+        memset(&groups[idx], 0, sizeof(Group));
+
+        groups[idx].id = sqlite3_column_int(stmt, 0);
+        groups[idx].owner_id = sqlite3_column_int(stmt, 2);
+
+        const unsigned char* gname = sqlite3_column_text(stmt, 1);
+        const unsigned char* owner_dn = sqlite3_column_text(stmt, 3);
+
+        strncpy(groups[idx].name, gname ? (const char*)gname : "", USERNAME_LENGTH-1);
+        groups[idx].name[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(groups[idx].owner_display_name, owner_dn ? (const char*)owner_dn : "Unknown", USERNAME_LENGTH-1);
+        groups[idx].owner_display_name[USERNAME_LENGTH-1] = '\0';
+
+        idx++;
+    }
+
+    *count = idx;
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return 0;
+}
+
+int db_send_group_message(int group_id, int sender_id, const char* content)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "INSERT INTO group_messages (group_id, sender_id, content) VALUES (?, ?, ?)",
+        -1, &stmt, NULL);
+
+    sqlite3_bind_int(stmt, 1, group_id);
+    sqlite3_bind_int(stmt, 2, sender_id);
+    sqlite3_bind_text(stmt, 3, content, -1, SQLITE_TRANSIENT);
+
+    int rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return rc == SQLITE_DONE ? 0 : -1;
+}
+
+int db_get_group_messages(int group_id, GroupMessage* messages, int max_messages, int* count)
+{
+    pthread_mutex_lock(&db_mutex);
+    sqlite3_stmt* stmt;
+
+    sqlite3_prepare_v2(db_conn,
+        "SELECT gm.group_id, gm.sender_id, u.display_name, gm.content "
+        "FROM group_messages gm "
+        "JOIN users u ON gm.sender_id = u.id "
+        "WHERE gm.group_id = ? "
+        "ORDER BY gm.created_at ASC ",
+        -1, &stmt, NULL);
+
+    sqlite3_bind_int(stmt, 1, group_id);
+
+    int idx = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW && idx < max_messages)
+    {
+        memset(&messages[idx], 0, sizeof(GroupMessage));
+
+        messages[idx].group_id = sqlite3_column_int(stmt, 0);
+        messages[idx].sender_id = sqlite3_column_int(stmt, 1);
+
+        const unsigned char* sender_dn = sqlite3_column_text(stmt, 2);
+        const unsigned char* cont = sqlite3_column_text(stmt, 3);
+
+        strncpy(messages[idx].sender_display_name, sender_dn ? (const char*)sender_dn : "Unknown", USERNAME_LENGTH-1);
+        messages[idx].sender_display_name[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(messages[idx].content, cont ? (const char*)cont : "", MESSAGE_LENGTH-1);
+        messages[idx].content[MESSAGE_LENGTH-1] = '\0';
+
+        idx++;
+    }
+
+    *count = idx;
+    sqlite3_finalize(stmt);
+    pthread_mutex_unlock(&db_mutex);
+    return 0;
 }

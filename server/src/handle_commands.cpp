@@ -424,16 +424,6 @@ int handle_delete_post(int client_fd, char* args)
     return 0;
 }
 
-int handle_send_message_friend(int client_fd, char* args)
-{
-    char *p=strtok(args,"|");
-    int user_id = atoi(p);
-    printf("%d",user_id);
-    const char* response = "SEND_MESSAGE_FRIEND OK";
-    send_message(client_fd, response);
-    return 0;
-}
-
 int handle_get_profile(int client_fd, char* args)
 {
     char *p=strtok(args, "|");
@@ -680,6 +670,215 @@ int handle_search_user(int client_fd, char* args)
     return 0;
 }
 
+int handle_send_private_message(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int sender_id=atoi(p);
+    p=strtok(NULL, "|");
+    int receiver_id=atoi(p);
+    p=strtok(NULL, "|");
+    char content[MESSAGE_LENGTH] = "";
+    strcpy(content,p);
+
+    if(db_send_private_message(sender_id, receiver_id, content))
+    {
+        const char* response = "SEND_PRIVATE_MESSAGE ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    snprintf(response, sizeof(response), "SEND_PRIVATE_MESSAGE OK");
+    printf("send private message: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_private_messages(int client_fd, char* args)
+{
+    char *p = strtok(args, "|");
+    int user1_id = atoi(p);
+    p = strtok(NULL, "|");
+    int user2_id = atoi(p);
+
+    PrivateMessage messages[MAX_MESSAGES];
+    int message_count = 0;
+
+    if(db_get_private_messages(user1_id, user2_id, messages, MAX_MESSAGES, &message_count) == -1)
+    {
+        const char* response = "GET_PRIVATE_MESSAGES ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH * 4];
+    int offset = snprintf(response, sizeof(response), "GET_PRIVATE_MESSAGES OK|%d", message_count);
+
+    for(int i = 0; i < message_count; i++)
+    {
+        char content[MESSAGE_LENGTH] = "";
+        char sender_dn[USERNAME_LENGTH] = "";
+        char receiver_dn[USERNAME_LENGTH] = "";
+
+        strncpy(content, messages[i].content, MESSAGE_LENGTH-1);
+        content[MESSAGE_LENGTH-1] = '\0';
+
+        strncpy(sender_dn, messages[i].sender_display_name, USERNAME_LENGTH-1);
+        sender_dn[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(receiver_dn, messages[i].receiver_display_name, USERNAME_LENGTH-1);
+        receiver_dn[USERNAME_LENGTH-1] = '\0';
+
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%d^%s^%s^%s", messages[i].id, messages[i].sender_id, messages[i].receiver_id, sender_dn,receiver_dn,content);
+    }
+
+    printf("get private messages: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
+
+int handle_create_group(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    char group_name[USERNAME_LENGTH] = "";
+    strcpy(group_name,p);
+    p=strtok(NULL, "|");
+    int owner_id=atoi(p);
+
+    if(db_create_group(group_name, owner_id))
+    {
+        const char* response = "CREATE_GROUP ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+    
+    char response[MESSAGE_LENGTH];
+    snprintf(response, sizeof(response), "CREATE_GROUP OK");
+    printf("create group message: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_add_user_group(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int group_id=atoi(p);
+    p=strtok(NULL, "|");
+    int owner_id=atoi(p);
+
+    if(db_add_user_group(group_id, owner_id))
+    {
+        const char* response = "ADD_USER_GROUP ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+    
+    char response[MESSAGE_LENGTH];
+    snprintf(response, sizeof(response), "ADD_USER_GROUP OK");
+    printf("add user group message: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_groups(int client_fd, char* args)
+{
+    char *p = strtok(args, "|");
+    int user_id = atoi(p);
+
+    Group groups[MAX_GROUPS];
+    int group_count = 0;
+
+    if(db_get_groups(user_id, groups, MAX_GROUPS, &group_count) == -1)
+    {
+        const char* response = "GET_GROUPS ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH * 4];
+    int offset = snprintf(response, sizeof(response), "GET_GROUPS OK|%d", group_count);
+
+    for(int i = 0; i < group_count; i++)
+    {
+        char gname[USERNAME_LENGTH] = "";
+        char owner_dn[USERNAME_LENGTH] = "";
+
+        strncpy(gname, groups[i].name, USERNAME_LENGTH-1);
+        gname[USERNAME_LENGTH-1] = '\0';
+
+        strncpy(owner_dn, groups[i].owner_display_name, USERNAME_LENGTH-1);
+        owner_dn[USERNAME_LENGTH-1] = '\0';
+
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%s^%d^%s", groups[i].id, gname,groups[i].owner_id, owner_dn);
+    }
+
+    printf("get groups: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_send_group_message(int client_fd, char* args)
+{
+    char *p=strtok(args, "|");
+    int group_id=atoi(p);
+    p=strtok(NULL, "|");
+    int sender_id=atoi(p);
+    p=strtok(NULL, "|");
+    char content[MESSAGE_LENGTH] = "";
+    strcpy(content,p);
+
+    if(db_send_group_message(group_id, sender_id, content))
+    {
+        const char* response = "SEND_GROUP_MESSAGE ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH];
+    snprintf(response, sizeof(response), "SEND_GROUP_MESSAGE OK");
+    printf("send group message: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
+int handle_get_group_messages(int client_fd, char* args)
+{
+    char *p = strtok(args, "|");
+    int group_id = atoi(p);
+
+    GroupMessage messages[MAX_MESSAGES];
+    int message_count = 0;
+
+    if(db_get_group_messages(group_id, messages, MAX_MESSAGES, &message_count) == -1)
+    {
+        const char* response = "GET_GROUP_MESSAGES ERROR|Database error";
+        send_message(client_fd, response);
+        return 0;
+    }
+
+    char response[MESSAGE_LENGTH * 4];
+    int offset = snprintf(response, sizeof(response), "GET_GROUP_MESSAGES OK|%d", message_count);
+
+    for(int i = 0; i < message_count; i++)
+    {
+        char content[MESSAGE_LENGTH] = "";
+        char sender_dn[USERNAME_LENGTH] = "";
+
+        strncpy(content, messages[i].content, MESSAGE_LENGTH-1);
+        content[MESSAGE_LENGTH-1] = '\0';
+
+        strncpy(sender_dn, messages[i].sender_display_name, USERNAME_LENGTH-1);
+        sender_dn[USERNAME_LENGTH-1] = '\0';
+
+        offset += snprintf(response + offset, sizeof(response) - offset, "|%d^%d^%s^%s", messages[i].group_id, messages[i].sender_id, sender_dn, content);
+    }
+
+    printf("get group messages: %s\n", response);
+    send_message(client_fd, response);
+    return 0;
+}
+
 int handle_commands(int client_fd)
 {
     int msg_length;
@@ -787,10 +986,6 @@ int handle_commands(int client_fd)
     {
         return handle_delete_post(client_fd, args);
     }
-    else if (strcmp(command, "SEND_MESSAGE_FRIEND") == 0)
-    {
-        return handle_send_message_friend(client_fd, args);
-    }
     else if (strcmp(command, "GET_PROFILE") == 0)
     {
         return handle_get_profile(client_fd, args);
@@ -834,6 +1029,34 @@ int handle_commands(int client_fd)
     else if (strcmp(command, "REMOVE_CLOSE_FRIEND") == 0)
     {
         return handle_remove_close_friend(client_fd, args);
+    }
+    else if (strcmp(command, "SEND_PRIVATE_MESSAGE") == 0)
+    {
+        return handle_send_private_message(client_fd, args);
+    }
+    else if (strcmp(command, "GET_PRIVATE_MESSAGES") == 0)
+    {
+        return handle_get_private_messages(client_fd, args);
+    }
+    else if (strcmp(command, "CREATE_GROUP") == 0)
+    {
+        return handle_create_group(client_fd, args);
+    }
+    else if (strcmp(command, "ADD_USER_GROUP") == 0)
+    {
+        return handle_add_user_group(client_fd, args);
+    }
+    else if (strcmp(command, "GET_GROUPS") == 0)
+    {
+        return handle_get_groups(client_fd, args);
+    }
+    else if (strcmp(command, "SEND_GROUP_MESSAGE") == 0)
+    {
+        return handle_send_group_message(client_fd, args);
+    }
+    else if (strcmp(command, "GET_GROUP_MESSAGES") == 0)
+    {
+        return handle_get_group_messages(client_fd, args);
     }
 
     return 0;
