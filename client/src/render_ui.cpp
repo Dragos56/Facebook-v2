@@ -25,7 +25,6 @@ static int user_id = -1;
 static int other_user_id = -1;
 static int friend_chat_id = -1;
 static int group_chat_id = -1;
-static bool chat_loaded = false;
 
 static bool showLogin = false;
 static bool showRegister = false;
@@ -484,7 +483,7 @@ static void render_right_panel(float w, float h)
                         ImGui::CloseCurrentPopup();
                     }
 
-                    if (ImGui::Button("Add to group", ImVec2(button_width, button_height)))
+                    if (ImGui::Button("Add to group"))
                     {
                         ImGui::OpenPopup(("group_select_popup##" + std::to_string(i)).c_str());
                     }
@@ -546,7 +545,7 @@ static void render_right_panel(float w, float h)
                         ImGui::CloseCurrentPopup();
                     }
 
-                    if (ImGui::Button("Add to group", ImVec2(button_width, button_height)))
+                    if (ImGui::Button("Add to group"))
                     {
                         ImGui::OpenPopup(("group_select_popup##" + std::to_string(i)).c_str());
                     }
@@ -580,7 +579,6 @@ static void render_right_panel(float w, float h)
 
         ImGui::Text("Groups:");
 
-        ImGui::Text("Create a group:");
         static char group_name[USERNAME_LENGTH];
         ImGui::InputText("name", group_name, USERNAME_LENGTH);
 
@@ -832,7 +830,7 @@ static void render_main_panel(float w, float h)
         static float private_chat_timer = 0.0f;
         private_chat_timer += delta;
 
-        if (friend_chat_id != -1 && (!friends_loaded || private_chat_timer >= 1.0f))
+        if (friend_chat_id != -1 && (!friends_loaded || private_chat_timer >= 0.5f))
         {
             private_chat_timer = 0.0f;
             get_private_messages(user_id, friend_chat_id, private_messages, &private_messages_count, response);
@@ -891,7 +889,7 @@ static void render_main_panel(float w, float h)
         static float group_chat_timer = 0.0f;
         group_chat_timer += delta;
 
-        if (group_chat_id != -1 && (!groups_loaded || group_chat_timer >= 1.0f))
+        if (group_chat_id != -1 && (!groups_loaded || group_chat_timer >= 0.5f))
         {
             group_chat_timer = 0.0f;
             get_group_messages(group_chat_id, group_messages, &group_messages_count, response);
@@ -928,6 +926,7 @@ static void render_main_panel(float w, float h)
             {
                 send_group_message(group_chat_id, user_id, chat_input, response);
                 groups_loaded = false;
+                
             }
 
             chat_input[0] = '\0';
@@ -1022,7 +1021,7 @@ static void render_main_panel(float w, float h)
         }
         ImGui::Separator();
         ImGui::Text("Your Posts:");
-        static char comment_buffer_profile[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
+
         for (int i = 0; i < user_post_count; i++)
         {
             ImGui::PushFont(customFontBig);
@@ -1167,7 +1166,7 @@ static void render_main_panel(float w, float h)
             break;
         }
         ImGui::Text("Your Posts:");
-        static char comment_buffer_profile_other_user[MAX_COMMENTS][COMMENT_LENGTH] = { "" };
+
         for (int i = 0; i < other_user_post_count; i++)
         {
             if (other_user_posts[i].visibility == 1 && !is_friend)
