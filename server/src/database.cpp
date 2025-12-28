@@ -612,14 +612,29 @@ int db_get_feed(int user_id, Post* posts, int max_posts, int* post_count)
     pthread_mutex_lock(&db_mutex);
     sqlite3_stmt* stmt;
 
-    sqlite3_prepare_v2(db_conn,
-        "SELECT p.id, p.user_id, u.display_name, p.content, p.visibility, "
-        "(SELECT COUNT(*) FROM likes WHERE post_id = p.id), "
-        "(SELECT COUNT(*) FROM comments WHERE post_id = p.id) "
-        "FROM posts p "
-        "JOIN users u ON p.user_id = u.id "
-        "ORDER BY p.created_at DESC",
-        -1, &stmt, NULL);
+    if (user_id == -1) 
+    {
+        sqlite3_prepare_v2(db_conn,
+            "SELECT p.id, p.user_id, u.display_name, p.content, p.visibility, "
+            "(SELECT COUNT(*) FROM likes WHERE post_id = p.id), "
+            "(SELECT COUNT(*) FROM comments WHERE post_id = p.id) "
+            "FROM posts p "
+            "JOIN users u ON p.user_id = u.id "
+            "WHERE p.visibility = 0 "
+            "ORDER BY p.created_at DESC",
+            -1, &stmt, NULL);
+    } 
+    else 
+    {
+        sqlite3_prepare_v2(db_conn,
+            "SELECT p.id, p.user_id, u.display_name, p.content, p.visibility, "
+            "(SELECT COUNT(*) FROM likes WHERE post_id = p.id), "
+            "(SELECT COUNT(*) FROM comments WHERE post_id = p.id) "
+            "FROM posts p "
+            "JOIN users u ON p.user_id = u.id "
+            "ORDER BY p.created_at DESC",
+            -1, &stmt, NULL);
+    }
 
     int count = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW && count < max_posts)

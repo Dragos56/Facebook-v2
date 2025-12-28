@@ -383,6 +383,7 @@ static void render_left_panel(float w, float h)
         {
             app_status = LOGGED_IN;
             feed_loaded = false;
+            friends_loaded = false;
         }
 
         if (ImGui::Button(ICON_FA_MAGNIFYING_GLASS " Search", ImVec2(bw, 60)))
@@ -696,7 +697,9 @@ static void render_main_panel(float w, float h)
         {
             feed_timer = 0.0f;
             get_feed(user_id, feed, &feed_count, response);
+            get_friends_list(user_id, friends, &friend_count, response);
             feed_loaded = true;
+            friends_loaded = true;
         }
 
         for (int i = 0; i < feed_count; i++)
