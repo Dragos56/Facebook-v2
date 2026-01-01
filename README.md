@@ -76,4 +76,4 @@ sudo apt-get install libglfw3-dev
 * Handling user data and relationships using SQLite3
 * Designing and implementing a graphical interface with GLFW3 and ImGui
 * Structuring and debugging a complex C project
-* Building and running C projects wit
+
