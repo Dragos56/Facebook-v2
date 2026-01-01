@@ -71,7 +71,7 @@ sudo apt-get install libglfw3-dev
 
 ## What I Learned
 
-* Implementing client–server architecture using sockets
+* Implementing client-server architecture using sockets
 * Managing multiple clients concurrently with multithreading
 * Handling user data and relationships using SQLite3
 * Designing and implementing a graphical interface with GLFW3 and ImGui
