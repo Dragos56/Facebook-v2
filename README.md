@@ -1,6 +1,6 @@
 # VirtualSoc
 
-VirtualSoc is an academic client–server social network application developed in C. It demonstrates core software development concepts including networking, multithreading, database management, and user interface design. The project simulates basic social network functionality, allowing multiple clients to interact with the server concurrently.
+VirtualSoc is an academic client-server social network application developed in C. It demonstrates core software development concepts including networking, multithreading, database management, and user interface design. The project simulates basic social network functionality, allowing multiple clients to interact with the server concurrently.
 
 ## Features
 
