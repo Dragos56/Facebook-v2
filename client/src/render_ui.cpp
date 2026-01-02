@@ -148,7 +148,32 @@ void render_posts_window(Post* main_post, float total_width, float total_height)
 
         if (ImGui::Button((ICON_FA_SHARE_NODES "##")))
         {
-            feed_loaded = false;
+            friends_loaded = false;
+            ImGui::OpenPopup(("share_post_popup##"));
+        }
+
+        if (ImGui::BeginPopup(("share_post_popup##")))
+        {
+            if (friend_count == 0)
+            {
+                ImGui::Text("No friends available.");
+            }
+            else
+            {
+                for (int j = 0; j < friend_count; j++)
+                {
+                    float button_width = ImGui::GetContentRegionAvail().x;
+                    float button_height = 40.0f;
+                    if (ImGui::Button(friends[j].display_name, ImVec2(button_width, button_height)))
+                    {
+                        char share_post[MESSAGE_LENGTH]="";
+                        snprintf(share_post, MESSAGE_LENGTH, "'%s' posted by %s", post.content, post.display_name);
+                        send_private_message(user_id, friends[j].user_id , share_post, response);
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+            }
+            ImGui::EndPopup();
         }
 
         ImGui::PopStyleColor();
@@ -762,7 +787,33 @@ static void render_main_panel(float w, float h)
 
             if (ImGui::Button((ICON_FA_SHARE_NODES "##" + std::to_string(i)).c_str()))
             {
-                feed_loaded = false;
+                friends_loaded = false;
+                ImGui::OpenPopup(("share_post_popup##" + std::to_string(i)).c_str());
+            }
+
+            if (ImGui::BeginPopup(("share_post_popup##" + std::to_string(i)).c_str()))
+            {
+                if (friend_count == 0)
+                {
+                    ImGui::Text("No friends available.");
+                }
+                else
+                {
+                    for (int j = 0; j < friend_count; j++)
+                    {
+                        float button_width = ImGui::GetContentRegionAvail().x;
+                        float button_height = 40.0f;
+
+                        if (ImGui::Button(friends[j].display_name, ImVec2(button_width, button_height)))
+                        {
+                            char share_post[MESSAGE_LENGTH]="";
+                            snprintf(share_post, MESSAGE_LENGTH, "'%s' posted by %s", feed[i].content, feed[i].display_name);
+                            send_private_message(user_id, friends[j].user_id , share_post, response);
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                }
+                ImGui::EndPopup();
             }
 
             ImGui::PopStyleColor();
@@ -1014,6 +1065,20 @@ static void render_main_panel(float w, float h)
             {
                 edit_mode = false;
             }
+
+            ImGui::Separator();
+
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+
+            if (ImGui::Button("Delete account"))
+            {
+                delete_account(&user_id, response);
+                app_status = LOGGED_OUT;
+            }
+
+            ImGui::PopStyleColor(3);
         }
         else
         {
@@ -1057,6 +1122,19 @@ static void render_main_panel(float w, float h)
             }
 
             ImGui::PopStyleColor();
+            
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+
+            if (ImGui::Button("Delete post"))
+            {
+                user_posts_loaded = false; 
+                delete_post(user_id, user_posts[i].post_id, response);
+            }
+
+            ImGui::PopStyleColor(3);
+            
             ImGui::Separator();
         }
         break;
